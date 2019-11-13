@@ -34,6 +34,7 @@ func findCallLineAndFile(callFuncName string) (int, string) {
 	for {
 		pc, file, line, ok = runtime.Caller(i)
 		funcName := runtime.FuncForPC(pc).Name()
+
 		if breakFlag {
 			break
 		}
@@ -61,9 +62,10 @@ func shortFileName(fileName string) (string, error) {
 	return name, err
 }
 
+const bufSize = 8 * 1024
+
 // ファイルの行数を取得する
 func lineCounter(r io.Reader) (int, error) {
-	bufSize := 8 * 1024
 	buf := make([]byte, bufSize)
 	delimiter := []byte{'\n'}
 	count := 0

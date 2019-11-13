@@ -1,7 +1,7 @@
 package filelogger
 
 import (
-	"fmt"
+	//"fmt"
 	"testing"
 )
 
@@ -9,8 +9,7 @@ import (
 func TestLogger(t *testing.T) {
 	fileLogger := NewfileLogger("./test.log")
 	fileLogger.openFile()
-	count, _ := lineCounter(fileLogger.file)
-	fmt.Println(count)
+	//count, _ := lineCounter(fileLogger.file)
 	fileLogger.SetOutput()
 	defer fileLogger.FileClose()
 	fileLogger.SetPrefix("[test]")
