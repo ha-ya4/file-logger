@@ -1,8 +1,8 @@
 package filelogger
 
 import (
-	"os"
 	"log"
+	"os"
 )
 
 type level string
@@ -10,39 +10,39 @@ type level string
 // loglevel?
 const (
 	DEBUG = level("[DEBUG]")
-	INFO = level("[INFO]")
-	WARN = level("[WARN]")
+	INFO  = level("[INFO]")
+	WARN  = level("[WARN]")
 	ERROR = level("[ERROR]")
 )
 
 type fileLogger struct {
 	*logFile
-	logger *log.Logger
-	global bool
+	logger    *log.Logger
+	global    bool
 	callPlace bool
 }
 
 type logFile struct {
-	Perm os.FileMode
-	flag int
+	Perm     os.FileMode
+	flag     int
 	filePath string
-	file *os.File
-	custom bool
+	file     *os.File
+	custom   bool
 }
 
 func NewLogFileCustom(filePath string, flag int, perm os.FileMode) *logFile {
-	return &logFile {
-		Perm: perm,
-		flag: flag,
+	return &logFile{
+		Perm:     perm,
+		flag:     flag,
 		filePath: filePath,
-		custom: true,
+		custom:   true,
 	}
 }
 
 func newLogFileDefault(filePath string) *logFile {
-	return &logFile {
-		Perm: 0666,
-		flag:  os.O_APPEND|os.O_CREATE|os.O_WRONLY,
+	return &logFile{
+		Perm:     0666,
+		flag:     os.O_APPEND | os.O_CREATE | os.O_RDWR,
 		filePath: filePath,
 	}
 }
@@ -59,22 +59,22 @@ func (l *logFile) openFile() error {
 
 type fileLoggerArgs struct {
 	prefix string
-	flags int
+	flags  int
 	custom bool
 }
 
 func NewfileLoggerArgsDefault() *fileLoggerArgs {
-	return &fileLoggerArgs {
+	return &fileLoggerArgs{
 		prefix: "",
-		flags: log.Ldate|log.Ltime|log.Lshortfile|log.LstdFlags,
+		flags:  log.Ldate | log.Ltime | log.Lshortfile | log.LstdFlags,
 		custom: true,
 	}
 }
 
 func NewfileLoggerArgsCustom(prefix string, flags int) *fileLoggerArgs {
-	return &fileLoggerArgs {
+	return &fileLoggerArgs{
 		prefix: prefix,
-		flags: flags,
+		flags:  flags,
 		custom: true,
 	}
 }
@@ -82,9 +82,9 @@ func NewfileLoggerArgsCustom(prefix string, flags int) *fileLoggerArgs {
 func NewfileLogger(filePath string) *fileLogger {
 	file := newLogFileDefault(filePath)
 
-	 return &fileLogger{
-		logFile: file,
-		logger: log.New(os.Stdout, "", log.Ldate|log.Ltime),
+	return &fileLogger{
+		logFile:   file,
+		logger:    log.New(os.Stdout, "", log.Ldate|log.Ltime),
 		callPlace: true,
 	}
 }
@@ -102,12 +102,12 @@ func NewfileLoggerCustom(lFile *logFile, lArgs *fileLoggerArgs) *fileLogger {
 	if lArgs.custom {
 		args = lArgs
 	} else {
-		args =  NewfileLoggerArgsDefault()
+		args = NewfileLoggerArgsDefault()
 	}
 
 	l := &fileLogger{
-		logFile: file,
-		logger: log.New(os.Stdout, args.prefix, args.flags),
+		logFile:   file,
+		logger:    log.New(os.Stdout, args.prefix, args.flags),
 		callPlace: true,
 	}
 	return l

@@ -1,10 +1,13 @@
 package filelogger
 
 import (
+	"bytes"
+	//"fmt"
+	"io"
 	"os"
 	"runtime"
-	"strings"
 	"strconv"
+	"strings"
 )
 
 // ファイル名と行数を main.go:145: のような形に結合する
@@ -19,12 +22,12 @@ func createCallPlaceSTR(callFuncName string) string {
 // iをインクリメントしていってスタックトレースを遡り,FileLoggerのprint系メソッドが呼び出された次のトレースのラインとファイル名を返す
 func findCallLineAndFile(callFuncName string) (int, string) {
 	var (
-		pc uintptr
-		file string
-		line int
-		ok bool
+		pc        uintptr
+		file      string
+		line      int
+		ok        bool
 		breakFlag bool
-		i int
+		i         int
 	)
 
 	// 呼び出した関数の次の情報がほしいので、ブレークするべきかは先に確認し、最後にフラグの操作をする
@@ -54,6 +57,29 @@ func callFuncName() string {
 // 受け取ったファイル名からカレントディレクトリと一致する部分を削除する
 func shortFileName(fileName string) (string, error) {
 	currentPath, err := os.Getwd()
-	name := strings.TrimPrefix(fileName, currentPath + "/")
+	name := strings.TrimPrefix(fileName, currentPath+"/")
 	return name, err
+}
+
+// ファイルの行数を取得する
+func lineCounter(r io.Reader) (int, error) {
+	bufSize := 8 * 1024
+	buf := make([]byte, bufSize)
+	delimiter := []byte{'\n'}
+	count := 0
+
+	// ファイル内の\nの数をカウントする。実際の行数より１少なくなってしまっているのでEOFを確認したあとに+1する
+	for {
+		b, err := r.Read(buf)
+		count += bytes.Count(buf[:b], delimiter)
+
+		switch {
+		case err == io.EOF:
+			count++
+			return count, nil
+
+		case err != nil:
+			return count, err
+		}
+	}
 }
