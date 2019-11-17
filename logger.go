@@ -1,9 +1,23 @@
 package filelogger
 
 import (
+	"errors"
 	"log"
 	"os"
+	"sync"
 )
+
+// エラーメッセージ
+var (
+	ErrFilePath = "missing file path"
+)
+
+// Logger ファイルへログ出力、ログローテーションなどをする
+var Logger *fileLogger
+
+func init() {
+	Logger = newfileLogger()
+}
 
 type level string
 
@@ -16,9 +30,9 @@ const (
 )
 
 type fileLogger struct {
+	sync.Mutex
 	*logFile
 	logger    *log.Logger
-	global    bool
 	callPlace bool
 }
 
@@ -28,6 +42,7 @@ type logFile struct {
 	filePath string
 	file     *os.File
 	custom   bool
+	maxLine int
 }
 
 func NewLogFileCustom(filePath string, flag int, perm os.FileMode) *logFile {
@@ -47,12 +62,21 @@ func newLogFileDefault(filePath string) *logFile {
 	}
 }
 
+func (l *logFile) SetFilePath(path string) {
+	l.filePath = path
+}
+
 func (l *logFile) close() error {
 	return l.file.Close()
 }
 
 func (l *logFile) openFile() error {
 	var err error
+
+	if l.filePath == "" {
+		err = errors.New(ErrFilePath)
+	}
+
 	l.file, err = os.OpenFile(l.filePath, l.flag, l.Perm)
 	return err
 }
@@ -79,8 +103,8 @@ func NewfileLoggerArgsCustom(prefix string, flags int) *fileLoggerArgs {
 	}
 }
 
-func NewfileLogger(filePath string) *fileLogger {
-	file := newLogFileDefault(filePath)
+func newfileLogger() *fileLogger {
+	file := newLogFileDefault("")
 
 	return &fileLogger{
 		logFile:   file,
@@ -89,7 +113,7 @@ func NewfileLogger(filePath string) *fileLogger {
 	}
 }
 
-func NewfileLoggerCustom(lFile *logFile, lArgs *fileLoggerArgs) *fileLogger {
+func (l *fileLogger) Custom(lFile *logFile, lArgs *fileLoggerArgs) {
 	var file *logFile
 	var args *fileLoggerArgs
 
@@ -105,17 +129,12 @@ func NewfileLoggerCustom(lFile *logFile, lArgs *fileLoggerArgs) *fileLogger {
 		args = NewfileLoggerArgsDefault()
 	}
 
-	l := &fileLogger{
-		logFile:   file,
-		logger:    log.New(os.Stdout, args.prefix, args.flags),
-		callPlace: true,
-	}
-	return l
+	l.logFile = file
+	l.logger = log.New(os.Stdout, args.prefix, args.flags)
 }
 
 func (l *fileLogger) FileClose() error {
-	l.global = false
-	return l.logFile.close()
+	return l.close()
 }
 
 func (l *fileLogger) SetCallPlace(flag bool) {
@@ -130,21 +149,35 @@ func (l *fileLogger) SetFlags(flags int) {
 	l.logger.SetFlags(flags)
 }
 
-func (l *fileLogger) SetOutput() error {
+func (l *fileLogger) Println(logLevel level, outputLog string) error {
+	var err error
+	l.Mutex.Lock()
+
+	l.setOutput()
+	lineCount, err := lineCounter(l.file)
+	if lineCount >= l.maxLine {}
+
+	callPlace := l.findCallPlace()
+	l.logger.Printf("%s%s %s\n", callPlace, logLevel, outputLog)
+
+	l.Mutex.Unlock()
+	return err
+}
+
+func (l *fileLogger) findCallPlace() string {
+	var cp string
+	if l.callPlace {
+		funcName := callFuncName()
+		cp = createCallPlaceSTR(funcName)
+	}
+	return cp
+}
+
+func (l *fileLogger) setOutput() error {
 	var err error
 	err = l.openFile()
 	if err == nil {
 		l.logger.SetOutput(l.file)
-		l.global = true
 	}
 	return err
-}
-
-func (l *fileLogger) Println(logLevel level, outputLog string) {
-	var callPlace string
-	if l.callPlace {
-		funcName := callFuncName()
-		callPlace = createCallPlaceSTR(funcName)
-	}
-	l.logger.Printf("%s%s %s\n", callPlace, logLevel, outputLog)
 }
