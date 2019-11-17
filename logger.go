@@ -33,7 +33,40 @@ type fileLogger struct {
 	sync.Mutex
 	*logFile
 	logger    *log.Logger
+	maxLine   int
 	callPlace bool
+}
+
+func newfileLogger() *fileLogger {
+	file := NewLogFileDefault("")
+	args := NewLoggerArgsDefault()
+
+	return &fileLogger{
+		logFile:   file,
+		logger:    log.New(os.Stdout, args.prefix, args.flags),
+		callPlace: true,
+	}
+}
+
+type fileLoggerArgs struct {
+	prefix string
+	flags  int
+	custom bool
+}
+
+func NewLoggerArgsDefault() *fileLoggerArgs {
+	return &fileLoggerArgs{
+		prefix: "",
+		flags:  log.Ldate | log.Ltime | log.Lshortfile | log.LstdFlags,
+	}
+}
+
+func NewLoggerArgsCustom(prefix string, flags int) *fileLoggerArgs {
+	return &fileLoggerArgs{
+		prefix: prefix,
+		flags:  flags,
+		custom: true,
+	}
 }
 
 type logFile struct {
@@ -42,7 +75,6 @@ type logFile struct {
 	filePath string
 	file     *os.File
 	custom   bool
-	maxLine int
 }
 
 func NewLogFileCustom(filePath string, flag int, perm os.FileMode) *logFile {
@@ -54,7 +86,7 @@ func NewLogFileCustom(filePath string, flag int, perm os.FileMode) *logFile {
 	}
 }
 
-func newLogFileDefault(filePath string) *logFile {
+func NewLogFileDefault(filePath string) *logFile {
 	return &logFile{
 		Perm:     0666,
 		flag:     os.O_APPEND | os.O_CREATE | os.O_RDWR,
@@ -66,7 +98,7 @@ func (l *logFile) SetFilePath(path string) {
 	l.filePath = path
 }
 
-func (l *logFile) close() error {
+func (l *logFile) FileClose() error {
 	return l.file.Close()
 }
 
@@ -81,38 +113,6 @@ func (l *logFile) openFile() error {
 	return err
 }
 
-type fileLoggerArgs struct {
-	prefix string
-	flags  int
-	custom bool
-}
-
-func NewfileLoggerArgsDefault() *fileLoggerArgs {
-	return &fileLoggerArgs{
-		prefix: "",
-		flags:  log.Ldate | log.Ltime | log.Lshortfile | log.LstdFlags,
-		custom: true,
-	}
-}
-
-func NewfileLoggerArgsCustom(prefix string, flags int) *fileLoggerArgs {
-	return &fileLoggerArgs{
-		prefix: prefix,
-		flags:  flags,
-		custom: true,
-	}
-}
-
-func newfileLogger() *fileLogger {
-	file := newLogFileDefault("")
-
-	return &fileLogger{
-		logFile:   file,
-		logger:    log.New(os.Stdout, "", log.Ldate|log.Ltime),
-		callPlace: true,
-	}
-}
-
 func (l *fileLogger) Custom(lFile *logFile, lArgs *fileLoggerArgs) {
 	var file *logFile
 	var args *fileLoggerArgs
@@ -120,21 +120,17 @@ func (l *fileLogger) Custom(lFile *logFile, lArgs *fileLoggerArgs) {
 	if lFile.custom {
 		file = lFile
 	} else {
-		file = newLogFileDefault(lFile.filePath)
+		file = NewLogFileDefault(lFile.filePath)
 	}
 
 	if lArgs.custom {
 		args = lArgs
 	} else {
-		args = NewfileLoggerArgsDefault()
+		args = NewLoggerArgsDefault()
 	}
 
 	l.logFile = file
 	l.logger = log.New(os.Stdout, args.prefix, args.flags)
-}
-
-func (l *fileLogger) FileClose() error {
-	return l.close()
 }
 
 func (l *fileLogger) SetCallPlace(flag bool) {
@@ -155,11 +151,13 @@ func (l *fileLogger) Println(logLevel level, outputLog string) error {
 
 	l.setOutput()
 	lineCount, err := lineCounter(l.file)
-	if lineCount >= l.maxLine {}
+	if lineCount >= l.maxLine {
+	}
 
 	callPlace := l.findCallPlace()
 	l.logger.Printf("%s%s %s\n", callPlace, logLevel, outputLog)
 
+	l.FileClose()
 	l.Mutex.Unlock()
 	return err
 }
