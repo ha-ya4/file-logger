@@ -1,20 +1,15 @@
 package filelogger
 
 import (
-	//"fmt"
+	"fmt"
 	"testing"
 )
 
 // 実際の動作テスト用
 func TestLogger(t *testing.T) {
-	fileLogger := NewfileLogger("./test.log")
-	fileLogger.openFile()
-	//count, _ := lineCounter(fileLogger.file)
-	fileLogger.SetOutput()
-	defer fileLogger.FileClose()
-	fileLogger.SetPrefix("[test]")
-	fileLogger.Println(INFO, "aaabbb")
-	//fileLogger.Println(WARN, "aaabbb")
-	//fileLogger.Println(DEBUG, "aaabbb")
-	//fileLogger.Println(ERROR, "aaabbb")
+	Logger.SetFilePath("./test.log")
+	Logger.SetMaxLine(10)
+	Logger.Println(ERROR, "test")
+
+	fmt.Println(getFileList("./"))
 }

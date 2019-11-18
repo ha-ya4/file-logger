@@ -4,10 +4,12 @@ import (
 	"bytes"
 	//"fmt"
 	"io"
+	"io/ioutil"
 	"os"
 	"runtime"
 	"strconv"
 	"strings"
+	"time"
 )
 
 // ファイル名と行数を main.go:145: のような形に結合する
@@ -84,4 +86,40 @@ func lineCounter(r io.Reader) (int, error) {
 			return count, err
 		}
 	}
+}
+
+func getNewFileName(filePath string) string {
+	now := getNow()
+	fileName := getFileName(filePath)
+	return now + fileName
+}
+
+func getFileName(filePath string) string {
+	f := strings.Split(filePath, "/")
+	i := len(f) - 1
+	// -にはならないと思うけど一応
+	if i < 0 {
+		i = 0
+	}
+	return f[i]
+}
+
+// 2019-11-18|13:20:18|というような形で現在時刻を返す
+func getNow() string {
+	n := time.Now().String()
+	now := strings.Split(n, ".")[0]
+	now = strings.Replace(now, " ", "|", 1)
+	return now + "|"
+}
+
+func getFileList(path string) []string {
+	files, _ := ioutil.ReadDir(path)
+	var fileList []string
+	for _, file := range files {
+		if file.IsDir() {
+			continue
+		}
+		fileList = append(fileList, file.Name())
+	}
+	return fileList
 }

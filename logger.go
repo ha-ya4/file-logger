@@ -32,9 +32,10 @@ const (
 type fileLogger struct {
 	sync.Mutex
 	*logFile
-	logger    *log.Logger
-	maxLine   int
-	callPlace bool
+	logger      *log.Logger
+	maxLine     int
+	maxRotation int
+	callPlace   bool
 }
 
 func newfileLogger() *fileLogger {
@@ -57,7 +58,7 @@ type fileLoggerArgs struct {
 func NewLoggerArgsDefault() *fileLoggerArgs {
 	return &fileLoggerArgs{
 		prefix: "",
-		flags:  log.Ldate | log.Ltime | log.Lshortfile | log.LstdFlags,
+		flags:  log.Ldate | log.Ltime | log.LstdFlags,
 	}
 }
 
@@ -144,14 +145,17 @@ func (l *fileLogger) SetPrefix(prefix string) {
 func (l *fileLogger) SetFlags(flags int) {
 	l.logger.SetFlags(flags)
 }
+func (l *fileLogger) SetMaxLine(ml int) {
+	l.maxLine = ml
+}
 
-func (l *fileLogger) Println(logLevel level, outputLog string) error {
-	var err error
+func (l *fileLogger) Println(logLevel level, outputLog string) {
 	l.Mutex.Lock()
-
 	l.setOutput()
-	lineCount, err := lineCounter(l.file)
-	if lineCount >= l.maxLine {
+
+	if l.isOverLine() {
+		l.FileClose()
+		l.rotation()
 	}
 
 	callPlace := l.findCallPlace()
@@ -159,7 +163,6 @@ func (l *fileLogger) Println(logLevel level, outputLog string) error {
 
 	l.FileClose()
 	l.Mutex.Unlock()
-	return err
 }
 
 func (l *fileLogger) findCallPlace() string {
@@ -178,4 +181,29 @@ func (l *fileLogger) setOutput() error {
 		l.logger.SetOutput(l.file)
 	}
 	return err
+}
+
+func (l *fileLogger) rotation() error {
+	fileName := getNewFileName(l.filePath)
+	if err := os.Rename(l.filePath, fileName); err != nil {
+		return err
+	}
+	l.setOutput()
+	return nil
+}
+
+func (l *fileLogger) isOverLine() bool {
+	if l.maxLine <= 0 {
+		return false
+	}
+	lineCount, _ := lineCounter(l.file)
+	return lineCount > l.maxLine
+}
+
+func (l *fileLogger) isOverFile() bool {
+	if l.maxLine <= 0 {
+		return false
+	}
+	lineCount, _ := lineCounter(l.file)
+	return lineCount > l.maxLine
 }
