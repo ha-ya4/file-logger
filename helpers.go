@@ -6,11 +6,11 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 	"runtime"
 	"strconv"
 	"strings"
 	"time"
-	"path/filepath"
 )
 
 // ファイル名と行数を main.go:145: のような形に結合する
@@ -113,4 +113,14 @@ func getFileList(path string) []string {
 		fileList = append(fileList, file.Name())
 	}
 	return fileList
+}
+
+func lenByString(list []string, str string) int {
+	var count int
+	for _, s := range list {
+		if strings.Contains(s, str) {
+			count++
+		}
+	}
+	return count
 }

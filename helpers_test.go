@@ -65,6 +65,17 @@ func TestLineCounter(t *testing.T) {
 	}
 }
 
+func TestLenByString(t *testing.T) {
+	list := []string{"golang", "go fmt", "go mod", "file", "len", "go"}
+	str := "go"
+	c := lenByString(list, str)
+	expectedCount := 4
+
+	if c != expectedCount {
+		t.Errorf("\n含まれている文字列が期待された数ではありません\ncount=%d\nexpected=%d", c, expectedCount)
+	}
+}
+
 // /home/user/golang/src/github.com/ha-ya4/my-package/file-logger/file-logger.TestCallFuncName
 // github.com/ha-ya4/my-package/file-logger.TestCallFuncNameの形にする
 func getPath(fullPath string) string {

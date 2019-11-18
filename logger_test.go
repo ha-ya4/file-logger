@@ -9,5 +9,5 @@ import (
 func TestLogger(t *testing.T) {
 	Logger.SetFilePath("./test.log")
 	Logger.SetMaxLine(10)
-	Logger.Println(ERROR, "test")
+	//Logger.Println(ERROR, "test")
 }

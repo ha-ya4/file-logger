@@ -4,7 +4,9 @@ import (
 	"errors"
 	"log"
 	"os"
+	"path/filepath"
 	"sync"
+	//"fmt"
 )
 
 // エラーメッセージ
@@ -153,9 +155,11 @@ func (l *fileLogger) Println(logLevel level, outputLog string) {
 	l.Mutex.Lock()
 	l.setOutput()
 
+	var rotation bool
+	var prevFileName string
 	if l.isOverLine() {
 		l.FileClose()
-		l.rotation()
+		prevFileName, rotation = l.rotation()
 	}
 
 	callPlace := l.findCallPlace()
@@ -163,6 +167,10 @@ func (l *fileLogger) Println(logLevel level, outputLog string) {
 
 	l.FileClose()
 	l.Mutex.Unlock()
+
+	if rotation {
+		l.postProcessing(prevFileName)
+	}
 }
 
 func (l *fileLogger) findCallPlace() string {
@@ -183,13 +191,16 @@ func (l *fileLogger) setOutput() error {
 	return err
 }
 
-func (l *fileLogger) rotation() error {
+func (l *fileLogger) rotation() (string, bool) {
+	complete := true
 	fileName := createFileName(l.filePath)
-	if err := os.Rename(l.filePath, fileName); err != nil {
-		return err
+	err := os.Rename(l.filePath, fileName)
+	if err != nil {
+		complete = false
 	}
 	l.setOutput()
-	return nil
+
+	return fileName, complete
 }
 
 func (l *fileLogger) isOverLine() bool {
@@ -201,9 +212,16 @@ func (l *fileLogger) isOverLine() bool {
 }
 
 func (l *fileLogger) isOverFile() bool {
-	if l.maxLine <= 0 {
+	if l.maxRotation <= 0 {
 		return false
 	}
-	lineCount, _ := lineCounter(l.file)
-	return lineCount > l.maxLine
+	dir := filepath.Dir(l.filePath)
+	fileList := getFileList(dir)
+	count := lenByString(fileList, filepath.Base(l.filePath))
+	return count > l.maxRotation
+}
+
+func (l *fileLogger) postProcessing(oldFileName string) {
+	if l.isOverFile() {
+	}
 }
