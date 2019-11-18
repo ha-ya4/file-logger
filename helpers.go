@@ -10,6 +10,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"path/filepath"
 )
 
 // ファイル名と行数を main.go:145: のような形に結合する
@@ -88,20 +89,10 @@ func lineCounter(r io.Reader) (int, error) {
 	}
 }
 
-func getNewFileName(filePath string) string {
+func createFileName(filePath string) string {
 	now := getNow()
-	fileName := getFileName(filePath)
+	fileName := filepath.Base(filePath)
 	return now + fileName
-}
-
-func getFileName(filePath string) string {
-	f := strings.Split(filePath, "/")
-	i := len(f) - 1
-	// -にはならないと思うけど一応
-	if i < 0 {
-		i = 0
-	}
-	return f[i]
 }
 
 // 2019-11-18|13:20:18|というような形で現在時刻を返す

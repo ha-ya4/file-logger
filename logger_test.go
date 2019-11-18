@@ -1,7 +1,7 @@
 package filelogger
 
 import (
-	"fmt"
+	//"fmt"
 	"testing"
 )
 
@@ -10,6 +10,4 @@ func TestLogger(t *testing.T) {
 	Logger.SetFilePath("./test.log")
 	Logger.SetMaxLine(10)
 	Logger.Println(ERROR, "test")
-
-	fmt.Println(getFileList("./"))
 }

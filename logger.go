@@ -184,7 +184,7 @@ func (l *fileLogger) setOutput() error {
 }
 
 func (l *fileLogger) rotation() error {
-	fileName := getNewFileName(l.filePath)
+	fileName := createFileName(l.filePath)
 	if err := os.Rename(l.filePath, fileName); err != nil {
 		return err
 	}
