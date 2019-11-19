@@ -217,7 +217,7 @@ func (l *fileLogger) isOverFile() bool {
 	}
 	dir := filepath.Dir(l.filePath)
 	fileList := getFileList(dir)
-	count := lenByString(fileList, filepath.Base(l.filePath))
+	count := containsLen(fileList, filepath.Base(l.filePath))
 	return count > l.maxRotation
 }
 

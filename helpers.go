@@ -107,7 +107,7 @@ func getFileList(path string) []string {
 	return fileList
 }
 
-func lenByString(list []string, str string) int {
+func containsLen(list []string, str string) int {
 	var count int
 	for _, s := range list {
 		if strings.Contains(s, str) {

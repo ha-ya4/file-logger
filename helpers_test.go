@@ -58,7 +58,7 @@ func TestLineCounter(t *testing.T) {
 func TestLenByString(t *testing.T) {
 	list := []string{"golang", "go fmt", "go mod", "file", "len", "go"}
 	str := "go"
-	c := lenByString(list, str)
+	c := containsLen(list, str)
 	expectedCount := 4
 
 	if c != expectedCount {
