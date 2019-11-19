@@ -34,19 +34,9 @@ func TestFindCallLineAndFile(t *testing.T) {
 	}
 }
 
-func TestShortFileName(t *testing.T) {
-	_, file := callFunc()
-	name, _ := shortFileName(file)
-	expectedName := "helpers_test.go"
-
-	if name != expectedName {
-		t.Errorf("\nショートファイル名が一致していません\nfile=%s\nexpected=%s", name, expectedName)
-	}
-}
-
 func TestCreateCallPlaceSTR(t *testing.T) {
 	cps := cps()
-	expectedCPS := "helpers_test.go:48:"
+	expectedCPS := "helpers_test.go:38:"
 	t.Log(cps)
 
 	if cps != expectedCPS {

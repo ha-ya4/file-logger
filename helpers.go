@@ -5,7 +5,6 @@ import (
 	//"fmt"
 	"io"
 	"io/ioutil"
-	"os"
 	"path/filepath"
 	"runtime"
 	"strconv"
@@ -18,7 +17,7 @@ import (
 // その場合は長いままのディレクトリ名で出力する
 func createCallPlaceSTR(callFuncName string) string {
 	line, file := findCallLineAndFile(callFuncName)
-	name, _ := shortFileName(file)
+	name := filepath.Base(file)
 	return name + ":" + strconv.Itoa(line) + ":"
 }
 
@@ -56,13 +55,6 @@ func findCallLineAndFile(callFuncName string) (int, string) {
 func callFuncName() string {
 	pc, _, _, _ := runtime.Caller(1)
 	return runtime.FuncForPC(pc).Name()
-}
-
-// 受け取ったファイル名からカレントディレクトリと一致する部分を削除する
-func shortFileName(fileName string) (string, error) {
-	currentPath, err := os.Getwd()
-	name := strings.TrimPrefix(fileName, currentPath+"/")
-	return name, err
 }
 
 const bufSize = 8 * 1024
