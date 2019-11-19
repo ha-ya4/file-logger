@@ -82,18 +82,12 @@ func lineCounter(r io.Reader) (int, error) {
 	}
 }
 
-func createFileName(filePath string) string {
-	now := getNow()
-	fileName := filepath.Base(filePath)
-	return now + fileName
-}
+const timeFormat = "Jan 2 15:04:05 2006"
 
-// 2019-11-18|13:20:18|というような形で現在時刻を返す
-func getNow() string {
-	n := time.Now().String()
-	now := strings.Split(n, ".")[0]
-	now = strings.Replace(now, " ", "|", 1)
-	return now + "|"
+func createFileName(filePath string) string {
+	now := time.Now().Format(timeFormat)
+	fileName := filepath.Base(filePath)
+	return now + "_" + fileName
 }
 
 func containsSTRFileList(path, str string) []os.FileInfo {
@@ -109,4 +103,34 @@ func containsSTRFileList(path, str string) []os.FileInfo {
 		}
 	}
 	return fileList
+}
+
+func oldFileName(fileList []os.FileInfo) string {
+	var (
+		varTime time.Time
+		t time.Time
+		name string
+	)
+
+	for i, fi := range fileList {
+		var err error
+		timeSTR := strings.Split(fi.Name(), "_")[0]
+		t, err = time.Parse(timeFormat, timeSTR)
+		if err != nil {
+			continue
+		}
+
+		if i == 0 {
+			varTime = t
+			name = fi.Name()
+			continue
+		}
+
+		if t.Before(varTime) {
+			varTime = t
+			name = fi.Name()
+		}
+	}
+
+	return name
 }

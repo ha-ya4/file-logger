@@ -216,18 +216,20 @@ func (l *fileLogger) isOverLine() bool {
 	return lineCount > l.maxLine
 }
 
-func (l *fileLogger) isOverFile() bool {
+func (l *fileLogger) isOverFile(fileList []os.FileInfo) bool {
 	if l.maxRotation <= 0 {
 		return false
 	}
-	dir := filepath.Dir(l.filePath)
-	name := filepath.Base(l.filePath)
-	fileList := containsSTRFileList(dir, name)
+
 	len := len(fileList)
 	return len > l.maxRotation
 }
 
-func (l *fileLogger) postProcessing(oldFileName string) {
-	if l.isOverFile() {
+func (l *fileLogger) postProcessing(prevFileName string) {
+	dir := filepath.Dir(l.filePath)
+	name := filepath.Base(l.filePath)
+	fileList := containsSTRFileList(dir, name)
+	if l.isOverFile(fileList) {
+		oldFileName := oldFileName(fileList)
 	}
 }
