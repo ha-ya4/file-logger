@@ -55,14 +55,15 @@ func TestLineCounter(t *testing.T) {
 	}
 }
 
-func TestLenByString(t *testing.T) {
-	list := []string{"golang", "go fmt", "go mod", "file", "len", "go"}
-	str := "go"
-	c := containsLen(list, str)
-	expectedCount := 4
+func TestContainsSTRFileList(t *testing.T) {
+	path := "./"
+	fileName := ".go"
+	fileList := containsSTRFileList(path, fileName)
+	len := len(fileList)
+	expectedLen := 4
 
-	if c != expectedCount {
-		t.Errorf("\n含まれている文字列が期待された数ではありません\ncount=%d\nexpected=%d", c, expectedCount)
+	if len != expectedLen {
+		t.Errorf("\n期待されるファイル数ではありません\ncount=%d\nexpected=%d", len, expectedLen)
 	}
 }
 

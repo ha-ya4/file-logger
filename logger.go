@@ -147,8 +147,13 @@ func (l *fileLogger) SetPrefix(prefix string) {
 func (l *fileLogger) SetFlags(flags int) {
 	l.logger.SetFlags(flags)
 }
+
 func (l *fileLogger) SetMaxLine(ml int) {
 	l.maxLine = ml
+}
+
+func (l *fileLogger) SetMaxRotation(mr int) {
+	l.maxRotation = mr
 }
 
 func (l *fileLogger) Println(logLevel level, outputLog string) {
@@ -216,9 +221,10 @@ func (l *fileLogger) isOverFile() bool {
 		return false
 	}
 	dir := filepath.Dir(l.filePath)
-	fileList := getFileList(dir)
-	count := containsLen(fileList, filepath.Base(l.filePath))
-	return count > l.maxRotation
+	name := filepath.Base(l.filePath)
+	fileList := containsSTRFileList(dir, name)
+	len := len(fileList)
+	return len > l.maxRotation
 }
 
 func (l *fileLogger) postProcessing(oldFileName string) {

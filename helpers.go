@@ -3,6 +3,7 @@ package filelogger
 import (
 	"bytes"
 	//"fmt"
+	"os"
 	"io"
 	"io/ioutil"
 	"path/filepath"
@@ -95,24 +96,17 @@ func getNow() string {
 	return now + "|"
 }
 
-func getFileList(path string) []string {
+func containsSTRFileList(path, str string) []os.FileInfo {
 	files, _ := ioutil.ReadDir(path)
-	var fileList []string
+	var fileList []os.FileInfo
 	for _, file := range files {
 		if file.IsDir() {
 			continue
 		}
-		fileList = append(fileList, file.Name())
-	}
-	return fileList
-}
 
-func containsLen(list []string, str string) int {
-	var count int
-	for _, s := range list {
-		if strings.Contains(s, str) {
-			count++
+		if strings.Contains(file.Name(), str) {
+			fileList = append(fileList, file)
 		}
 	}
-	return count
+	return fileList
 }
