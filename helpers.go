@@ -166,6 +166,7 @@ func Unfreeze(r io.Reader) (bytes.Buffer, error) {
 	reader, err := gzip.NewReader(r)
 	b := bytes.Buffer{}
 	b.ReadFrom(reader)
+	reader.Close()
 	return b, err
 }
 

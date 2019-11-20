@@ -162,13 +162,16 @@ func (l *fileLogger) Println(logLevel level, outputLog string) {
 	if rotation {
 		l.deleteOldFile()
 	}
-	_ = prevFileName
 
 	callPlace := l.findCallPlace()
 	l.logger.Printf("%s%s %s\n", callPlace, logLevel, outputLog)
 
 	l.FileClose()
 	l.Mutex.Unlock()
+
+	if rotation {
+		l.compressPrevFile(prevFileName)
+	}
 }
 
 func (l *fileLogger) findCallPlace() string {
@@ -238,15 +241,16 @@ func (l *fileLogger) deleteOldFile() error {
 	return err
 }
 
-func (l *fileLogger) compressPrevFile() error {
+func (l *fileLogger) compressPrevFile(path string) error {
 	var err error
-	file, err := os.Open(l.fm.path)
+
+	file, err := os.Open(path)
 	b, err := ioutil.ReadAll(file)
 	if err != nil {
 		return err
 	}
 
-	newFile, err := os.Create(l.fm.path)
+	newFile, err := os.Create(path)
 	if err != nil {
 		return err
 	}
