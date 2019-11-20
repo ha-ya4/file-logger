@@ -1,7 +1,6 @@
 package filelogger
 
 import (
-	"errors"
 	"log"
 	"os"
 	"path/filepath"
@@ -73,32 +72,34 @@ func NewLoggerArgsCustom(prefix string, flags int) *fileLoggerArgs {
 }
 
 type logFile struct {
-	Perm     os.FileMode
-	flag     int
-	filePath string
-	file     *os.File
-	custom   bool
+	Perm   os.FileMode
+	flag   int
+	fm     *fileNameManager
+	file   *os.File
+	custom bool
 }
 
 func NewLogFileCustom(filePath string, flag int, perm os.FileMode) *logFile {
+	fm := newFileNameManager(filePath)
 	return &logFile{
-		Perm:     perm,
-		flag:     flag,
-		filePath: filePath,
-		custom:   true,
+		Perm:   perm,
+		flag:   flag,
+		fm:     fm,
+		custom: true,
 	}
 }
 
 func NewLogFileDefault(filePath string) *logFile {
+	fm := newFileNameManager(filePath)
 	return &logFile{
-		Perm:     0666,
-		flag:     os.O_APPEND | os.O_CREATE | os.O_RDWR,
-		filePath: filePath,
+		Perm: 0666,
+		flag: os.O_APPEND | os.O_CREATE | os.O_RDWR,
+		fm:   fm,
 	}
 }
 
 func (l *logFile) SetFilePath(path string) {
-	l.filePath = path
+	l.fm = newFileNameManager(path)
 }
 
 func (l *logFile) FileClose() error {
@@ -108,11 +109,7 @@ func (l *logFile) FileClose() error {
 func (l *logFile) openFile() error {
 	var err error
 
-	if l.filePath == "" {
-		err = errors.New(ErrFilePath)
-	}
-
-	l.file, err = os.OpenFile(l.filePath, l.flag, l.Perm)
+	l.file, err = os.OpenFile(l.fm.path, l.flag, l.Perm)
 	return err
 }
 
@@ -123,7 +120,7 @@ func (l *fileLogger) Custom(lFile *logFile, lArgs *fileLoggerArgs) {
 	if lFile.custom {
 		file = lFile
 	} else {
-		file = NewLogFileDefault(lFile.filePath)
+		file = NewLogFileDefault("")
 	}
 
 	if lArgs.custom {
@@ -199,8 +196,8 @@ func (l *fileLogger) rotation() (string, bool) {
 	}
 
 	rotation = true
-	fileName = createFileName(l.filePath)
-	err := os.Rename(l.filePath, fileName)
+	fileName = createFileName(l.fm.path)
+	err := os.Rename(l.fm.path, fileName)
 	if err != nil {
 		rotation = false
 		return fileName, rotation
@@ -230,14 +227,14 @@ func (l *fileLogger) isOverFile(fileList []os.FileInfo) bool {
 
 func (l *fileLogger) deleteOldFile() error {
 	var err error
-	dir := filepath.Dir(l.filePath)
-	name := filepath.Base(l.filePath)
-	fileList := containsSTRFileList(dir, name)
+	fileList := containsSTRFileList(l.fm.dir, l.fm.name)
 
 	if l.isOverFile(fileList) {
 		oldFileName := oldFileName(fileList)
-		err = os.Remove(filepath.Join(dir, oldFileName))
+		err = os.Remove(filepath.Join(l.fm.dir, oldFileName))
 	}
 
 	return err
 }
+
+func (l *fileLogger) compressPrevFile(path string) {}

@@ -3,15 +3,31 @@ package filelogger
 import (
 	"bytes"
 	//"fmt"
-	"os"
 	"io"
 	"io/ioutil"
+	"os"
 	"path/filepath"
 	"runtime"
 	"strconv"
 	"strings"
 	"time"
 )
+
+type fileNameManager struct {
+	path string
+	name string
+	dir  string
+}
+
+func newFileNameManager(path string) *fileNameManager {
+	name := filepath.Base(path)
+	dir := filepath.Dir(path)
+	return &fileNameManager{
+		path: path,
+		name: name,
+		dir:  dir,
+	}
+}
 
 // ファイル名と行数を main.go:145: のような形に結合する
 // shortFileNameはos.Getwdのエラーを返すが、ここでエラーがでても（おそらく）短くできなかった元のカレントディレクトリ名が返ってくると思うのでerrorは無視する
@@ -108,8 +124,8 @@ func containsSTRFileList(path, str string) []os.FileInfo {
 func oldFileName(fileList []os.FileInfo) string {
 	var (
 		varTime time.Time
-		t time.Time
-		name string
+		t       time.Time
+		name    string
 	)
 
 	for i, fi := range fileList {
