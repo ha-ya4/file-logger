@@ -11,5 +11,6 @@ import (
 func TestLogger(t *testing.T) {
 	Logger.SetFilePath("./test.log")
 	Logger.SetMaxLine(2)
+	Logger.SetMaxRotation(3)
 	Logger.Println(ERROR, "a")
 }

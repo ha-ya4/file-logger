@@ -160,22 +160,17 @@ func (l *fileLogger) Println(logLevel level, outputLog string) {
 	l.Mutex.Lock()
 	l.setOutput()
 
-	var rotation bool
-	var prevFileName string
-	if l.isOverLine() {
-		l.FileClose()
-		prevFileName, rotation = l.rotation()
+	prevFileName, rotation := l.rotation()
+	if rotation {
+		l.deleteOldFile()
 	}
+	_ = prevFileName
 
 	callPlace := l.findCallPlace()
 	l.logger.Printf("%s%s %s\n", callPlace, logLevel, outputLog)
 
 	l.FileClose()
 	l.Mutex.Unlock()
-
-	if rotation {
-		l.postProcessing(prevFileName)
-	}
 }
 
 func (l *fileLogger) findCallPlace() string {
@@ -197,15 +192,23 @@ func (l *fileLogger) setOutput() error {
 }
 
 func (l *fileLogger) rotation() (string, bool) {
-	complete := true
-	fileName := createFileName(l.filePath)
+	var rotation bool
+	var fileName string
+	if !l.isOverLine() {
+		return fileName, rotation
+	}
+
+	rotation = true
+	fileName = createFileName(l.filePath)
 	err := os.Rename(l.filePath, fileName)
 	if err != nil {
-		complete = false
+		rotation = false
+		return fileName, rotation
 	}
-	l.setOutput()
 
-	return fileName, complete
+	l.FileClose()
+	l.setOutput()
+	return fileName, rotation
 }
 
 func (l *fileLogger) isOverLine() bool {
@@ -225,11 +228,16 @@ func (l *fileLogger) isOverFile(fileList []os.FileInfo) bool {
 	return len > l.maxRotation
 }
 
-func (l *fileLogger) postProcessing(prevFileName string) {
+func (l *fileLogger) deleteOldFile() error {
+	var err error
 	dir := filepath.Dir(l.filePath)
 	name := filepath.Base(l.filePath)
 	fileList := containsSTRFileList(dir, name)
+
 	if l.isOverFile(fileList) {
 		oldFileName := oldFileName(fileList)
+		err = os.Remove(filepath.Join(dir, oldFileName))
 	}
+
+	return err
 }
