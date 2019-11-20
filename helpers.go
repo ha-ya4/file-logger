@@ -2,6 +2,7 @@ package filelogger
 
 import (
 	"bytes"
+	"compress/gzip"
 	//"fmt"
 	"io"
 	"io/ioutil"
@@ -150,3 +151,21 @@ func oldFileName(fileList []os.FileInfo) string {
 
 	return name
 }
+
+func compress(w io.Writer, content []byte) error {
+	writer := gzip.NewWriter(w)
+	_, err := writer.Write(content)
+	writer.Close()
+
+	return err
+}
+
+// Unfreeze gzipで圧縮されたものを解答する
+func Unfreeze(r io.Reader) (bytes.Buffer, error) {
+	var err error
+	reader, err := gzip.NewReader(r)
+	b := bytes.Buffer{}
+	b.ReadFrom(reader)
+	return b, err
+}
+

@@ -3,6 +3,7 @@ package filelogger
 import (
 	"log"
 	"os"
+	"io/ioutil"
 	"path/filepath"
 	"sync"
 	//"fmt"
@@ -237,4 +238,19 @@ func (l *fileLogger) deleteOldFile() error {
 	return err
 }
 
-func (l *fileLogger) compressPrevFile(path string) {}
+func (l *fileLogger) compressPrevFile() error {
+	var err error
+	file, err := os.Open(l.fm.path)
+	b, err := ioutil.ReadAll(file)
+	if err != nil {
+		return err
+	}
+
+	newFile, err := os.Create(l.fm.path)
+	if err != nil {
+		return err
+	}
+
+	err = compress(newFile, b)
+	return err
+}
