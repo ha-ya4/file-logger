@@ -170,7 +170,7 @@ func (l *fileLogger) Println(logLevel level, outputLog string) {
 	l.Mutex.Unlock()
 
 	if rotation {
-		l.compressPrevFile(prevFileName)
+		l.compressFile(prevFileName)
 	}
 }
 
@@ -241,7 +241,7 @@ func (l *fileLogger) deleteOldFile() error {
 	return err
 }
 
-func (l *fileLogger) compressPrevFile(path string) error {
+func (l *fileLogger) compressFile(path string) error {
 	var err error
 
 	file, err := os.Open(path)
@@ -250,7 +250,7 @@ func (l *fileLogger) compressPrevFile(path string) error {
 		return err
 	}
 
-	newFile, err := os.Create(path)
+	newFile, err := os.Create(path+".gzip")
 	if err != nil {
 		return err
 	}
