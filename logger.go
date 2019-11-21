@@ -203,7 +203,7 @@ func (l *fileLogger) rotation() (string, bool) {
 	}
 
 	rotation = true
-	fileName = createFileName(l.fm.path)
+	fileName = l.fm.getNameAddTimeNow()
 	err := os.Rename(l.fm.path, fileName)
 	if err != nil {
 		rotation = false

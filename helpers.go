@@ -30,6 +30,13 @@ func newFileNameManager(path string) *fileNameManager {
 	}
 }
 
+const timeFormat = "Jan 2 15:04:05 2006"
+
+func (f *fileNameManager) getNameAddTimeNow() string {
+	now := time.Now().Format(timeFormat)
+	return now + "_" + f.name
+}
+
 // ファイル名と行数を main.go:145: のような形に結合する
 // shortFileNameはos.Getwdのエラーを返すが、ここでエラーがでても（おそらく）短くできなかった元のカレントディレクトリ名が返ってくると思うのでerrorは無視する
 // その場合は長いままのディレクトリ名で出力する
@@ -97,14 +104,6 @@ func lineCounter(r io.Reader) (int, error) {
 			return count, err
 		}
 	}
-}
-
-const timeFormat = "Jan 2 15:04:05 2006"
-
-func createFileName(filePath string) string {
-	now := time.Now().Format(timeFormat)
-	fileName := filepath.Base(filePath)
-	return now + "_" + fileName
 }
 
 func containsSTRFileList(path, str string) []os.FileInfo {
