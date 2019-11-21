@@ -13,10 +13,4 @@ func TestLogger(t *testing.T) {
 	Logger.SetMaxLine(2)
 	Logger.SetMaxRotation(3)
 	Logger.Println(ERROR, "a")
-	/*
-	f, _ := os.Open("./testtest.log")
-	b, _ := Unfreeze(f)
-	ff, _ := os.Create("xxx.log")
-	ff.Write(b.Bytes())
-	*/
 }

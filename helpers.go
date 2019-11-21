@@ -169,4 +169,3 @@ func Unfreeze(r io.Reader) (bytes.Buffer, error) {
 	reader.Close()
 	return b, err
 }
-

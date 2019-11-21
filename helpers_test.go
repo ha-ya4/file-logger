@@ -1,10 +1,10 @@
 package filelogger
 
 import (
+	"bytes"
 	"os"
 	"strings"
 	"testing"
-	//"fmt"
 )
 
 func TestCallFuncName(t *testing.T) {
@@ -64,6 +64,28 @@ func TestContainsSTRFileList(t *testing.T) {
 
 	if len != expectedLen {
 		t.Errorf("\n期待されるファイル数ではありません\ncount=%d\nexpected=%d", len, expectedLen)
+	}
+}
+
+func TestCompressAndUnfreeze(t *testing.T) {
+	var err error
+	c := []byte("Hello World!")
+
+	b := &bytes.Buffer{}
+	err = compress(b, c)
+	if err != nil {
+		t.Errorf("TestCompressAndUnfreeze: 圧縮に失敗しました")
+	}
+	if b.String() == string(c) {
+		t.Errorf("TestCompressAndUnfreeze: 圧縮に失敗しました\nunfreezw=%s\nexpected=%s", b.String(), string(c))
+	}
+
+	bb, err := Unfreeze(b)
+	if err != nil {
+		t.Errorf("TestCompressAndUnfreeze: 解凍に失敗しました")
+	}
+	if bb.String() != string(c) {
+		t.Errorf("TestCompressAndUnfreeze: 期待される結果が得られませんでした\nunfreezw=%s\nexpected=%s", bb.String(), string(c))
 	}
 }
 

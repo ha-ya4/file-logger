@@ -1,9 +1,9 @@
 package filelogger
 
 import (
+	"io/ioutil"
 	"log"
 	"os"
-	"io/ioutil"
 	"path/filepath"
 	"sync"
 	//"fmt"
@@ -154,7 +154,8 @@ func (l *fileLogger) SetMaxRotation(mr int) {
 	l.maxRotation = mr
 }
 
-func (l *fileLogger) Println(logLevel level, outputLog string) {
+func (l *fileLogger) Println(logLevel level, outputLog string) error {
+	var err error
 	l.Mutex.Lock()
 	l.setOutput()
 
@@ -170,8 +171,10 @@ func (l *fileLogger) Println(logLevel level, outputLog string) {
 	l.Mutex.Unlock()
 
 	if rotation {
-		l.compressFile(prevFileName)
+		err = l.compressFile(prevFileName)
 	}
+
+	return err
 }
 
 func (l *fileLogger) findCallPlace() string {
@@ -250,7 +253,7 @@ func (l *fileLogger) compressFile(path string) error {
 		return err
 	}
 
-	newFile, err := os.Create(path+".gzip")
+	newFile, err := os.Create(path)
 	if err != nil {
 		return err
 	}
