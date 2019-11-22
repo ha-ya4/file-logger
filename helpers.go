@@ -129,10 +129,11 @@ func oldFileName(fileList []os.FileInfo) string {
 		t       time.Time
 		name    string
 	)
+	flag := true
 
 	// 一回目のループの日時をvarTime変数にセットし、次のループの日時tと比較する
 	// tのほうが古い場合varTimeにセットする、を繰り返す
-	for i, fi := range fileList {
+	for _, fi := range fileList {
 		var err error
 		timeSTR := strings.Split(fi.Name(), "_")[0]
 		t, err = time.Parse(timeFormat, timeSTR)
@@ -140,9 +141,10 @@ func oldFileName(fileList []os.FileInfo) string {
 			continue
 		}
 
-		if i == 0 {
+		if flag {
 			varTime = t
 			name = fi.Name()
+			flag = false
 			continue
 		}
 
