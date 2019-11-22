@@ -34,10 +34,15 @@ const (
 type fileLogger struct {
 	sync.Mutex
 	*logFile
-	logger      *log.Logger
-	maxLine     int
-	maxRotation int
-	callPlace   bool
+	logger     *log.Logger
+	rotateConf RotateConfig
+	callPlace  bool
+}
+
+// RotateConfig ローテーションの設定をする構造体
+type RotateConfig struct {
+	maxLine     int // 何行で次のファイルに移るか
+	maxRotation int // ファイル何枚ででローテーションするか
 }
 
 func newfileLogger() *fileLogger {
@@ -146,12 +151,8 @@ func (l *fileLogger) SetFlags(flags int) {
 	l.logger.SetFlags(flags)
 }
 
-func (l *fileLogger) SetMaxLine(ml int) {
-	l.maxLine = ml
-}
-
-func (l *fileLogger) SetMaxRotation(mr int) {
-	l.maxRotation = mr
+func (l *fileLogger) SetRotate(conf RotateConfig) {
+	l.rotateConf = conf
 }
 
 func (l *fileLogger) Println(logLevel level, outputLog string) error {
@@ -216,20 +217,20 @@ func (l *fileLogger) rotation() (string, bool) {
 }
 
 func (l *fileLogger) isOverLine() bool {
-	if l.maxLine <= 0 {
+	if l.rotateConf.maxLine <= 0 {
 		return false
 	}
 	lineCount, _ := lineCounter(l.file)
-	return lineCount > l.maxLine
+	return lineCount > l.rotateConf.maxLine
 }
 
 func (l *fileLogger) isOverFile(fileList []os.FileInfo) bool {
-	if l.maxRotation <= 0 {
+	if l.rotateConf.maxRotation <= 0 {
 		return false
 	}
 
 	len := len(fileList)
-	return len > l.maxRotation
+	return len > l.rotateConf.maxRotation
 }
 
 func (l *fileLogger) deleteOldFile() error {

@@ -10,7 +10,6 @@ import (
 // 実際の動作テスト用
 func TestLogger(t *testing.T) {
 	Logger.SetFilePath("./test.log")
-	Logger.SetMaxLine(2)
-	Logger.SetMaxRotation(3)
+	Logger.SetRotate(RotateConfig{maxLine: 2, maxRotation: 3})
 	Logger.Println(ERROR, "a")
 }
