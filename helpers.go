@@ -3,7 +3,6 @@ package filelogger
 import (
 	"bytes"
 	"compress/gzip"
-	//"fmt"
 	"io"
 	"io/ioutil"
 	"os"
@@ -32,6 +31,7 @@ func newFileNameManager(path string) *fileNameManager {
 
 const timeFormat = "Jan 2 15:04:05 2006"
 
+// getNameAddTimeNow ファイル名の先頭に現在の日時を付与した名前を返す
 func (f *fileNameManager) getNameAddTimeNow() string {
 	now := time.Now().Format(timeFormat)
 	return now + "_" + f.name
@@ -106,6 +106,7 @@ func lineCounter(r io.Reader) (int, error) {
 	}
 }
 
+// containsSTRFileList 指定したディレクトリにある、指定した文字列が含まれるファイル名のos.FileInfo配列を返す
 func containsSTRFileList(path, str string) []os.FileInfo {
 	files, _ := ioutil.ReadDir(path)
 	var fileList []os.FileInfo
@@ -121,6 +122,7 @@ func containsSTRFileList(path, str string) []os.FileInfo {
 	return fileList
 }
 
+// oldFileName 受け取った配列の中の日時が付与されたファイル名で一番古いファイルの名前を返す
 func oldFileName(fileList []os.FileInfo) string {
 	var (
 		varTime time.Time
@@ -128,6 +130,8 @@ func oldFileName(fileList []os.FileInfo) string {
 		name    string
 	)
 
+	// 一回目のループの日時をvarTime変数にセットし、次のループの日時tと比較する
+	// tのほうが古い場合varTimeにセットする、を繰り返す
 	for i, fi := range fileList {
 		var err error
 		timeSTR := strings.Split(fi.Name(), "_")[0]

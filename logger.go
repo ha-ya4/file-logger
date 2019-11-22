@@ -6,7 +6,6 @@ import (
 	"os"
 	"path/filepath"
 	"sync"
-	//"fmt"
 )
 
 // エラーメッセージ
@@ -33,7 +32,7 @@ const (
 
 type fileLogger struct {
 	sync.Mutex
-	*logFile
+	*LogFile
 	logger     *log.Logger
 	rotateConf RotateConfig
 	callPlace  bool
@@ -50,34 +49,38 @@ func newfileLogger() *fileLogger {
 	args := NewLoggerArgsDefault()
 
 	return &fileLogger{
-		logFile:   file,
+		LogFile:   file,
 		logger:    log.New(os.Stdout, args.prefix, args.flags),
 		callPlace: true,
 	}
 }
 
-type fileLoggerArgs struct {
+// LoggerArgs log.Loggerの設定値を保持する
+type LoggerArgs struct {
 	prefix string
 	flags  int
 	custom bool
 }
 
-func NewLoggerArgsDefault() *fileLoggerArgs {
-	return &fileLoggerArgs{
+// NewLoggerArgsDefault log.Loggerのデフォルトの設定値を持つ*LoggerArgs返す
+func NewLoggerArgsDefault() *LoggerArgs {
+	return &LoggerArgs{
 		prefix: "",
 		flags:  log.Ldate | log.Ltime | log.LstdFlags,
 	}
 }
 
-func NewLoggerArgsCustom(prefix string, flags int) *fileLoggerArgs {
-	return &fileLoggerArgs{
+// NewLoggerArgsCustom log.Loggerの設定値を引数として受け取り、*LoggerArgsを返す
+func NewLoggerArgsCustom(prefix string, flags int) *LoggerArgs {
+	return &LoggerArgs{
 		prefix: prefix,
 		flags:  flags,
 		custom: true,
 	}
 }
 
-type logFile struct {
+// LogFile ログファイルの設定、pathファイル自体を保持する構造体
+type LogFile struct {
 	Perm   os.FileMode
 	flag   int
 	fm     *fileNameManager
@@ -85,9 +88,10 @@ type logFile struct {
 	custom bool
 }
 
-func NewLogFileCustom(filePath string, flag int, perm os.FileMode) *logFile {
+// NewLogFileCustom ログファイルの設定を引数として受け取り*LogFileを返す
+func NewLogFileCustom(filePath string, flag int, perm os.FileMode) *LogFile {
 	fm := newFileNameManager(filePath)
-	return &logFile{
+	return &LogFile{
 		Perm:   perm,
 		flag:   flag,
 		fm:     fm,
@@ -95,33 +99,36 @@ func NewLogFileCustom(filePath string, flag int, perm os.FileMode) *logFile {
 	}
 }
 
-func NewLogFileDefault(filePath string) *logFile {
+// NewLogFileDefault ログファイルのデフォルトの設定をセットして*LogFileを返す
+func NewLogFileDefault(filePath string) *LogFile {
 	fm := newFileNameManager(filePath)
-	return &logFile{
+	return &LogFile{
 		Perm: 0666,
 		flag: os.O_APPEND | os.O_CREATE | os.O_RDWR,
 		fm:   fm,
 	}
 }
 
-func (l *logFile) SetFilePath(path string) {
+// SetFilePath 受け取ったログファイルのpathをnewFileNameManagerに渡し、それをfmフィールドにセットする
+func (l *LogFile) SetFilePath(path string) {
 	l.fm = newFileNameManager(path)
 }
 
-func (l *logFile) FileClose() error {
+// FileClose ファイルをクローズする
+func (l *LogFile) FileClose() error {
 	return l.file.Close()
 }
 
-func (l *logFile) openFile() error {
+func (l *LogFile) openFile() error {
 	var err error
 
 	l.file, err = os.OpenFile(l.fm.path, l.flag, l.Perm)
 	return err
 }
 
-func (l *fileLogger) Custom(lFile *logFile, lArgs *fileLoggerArgs) {
-	var file *logFile
-	var args *fileLoggerArgs
+func (l *fileLogger) Custom(lFile *LogFile, lArgs *LoggerArgs) {
+	var file *LogFile
+	var args *LoggerArgs
 
 	if lFile.custom {
 		file = lFile
@@ -135,7 +142,7 @@ func (l *fileLogger) Custom(lFile *logFile, lArgs *fileLoggerArgs) {
 		args = NewLoggerArgsDefault()
 	}
 
-	l.logFile = file
+	l.LogFile = file
 	l.logger = log.New(os.Stdout, args.prefix, args.flags)
 }
 
@@ -155,6 +162,10 @@ func (l *fileLogger) SetRotate(conf RotateConfig) {
 	l.rotateConf = conf
 }
 
+// Println ログを出力する
+// 最初にロックをかけ、ローテーションが必要なら現在のファイルの名前にローテーション時の日時を付与し、次のファイルに移る。
+// この関数が呼び出されたファイル名と行数を取得し、ログのタイプ、ログと一緒に出力する。
+// ローテーションした場合はロック解除後にファイルの圧縮を行う
 func (l *fileLogger) Println(logLevel level, outputLog string) error {
 	var err error
 	l.Mutex.Lock()
@@ -196,6 +207,9 @@ func (l *fileLogger) setOutput() error {
 	return err
 }
 
+// rotation セットされているファイルに書き込む最大行数に達しているかチェックし、必要なら次のファイルを作成しアウトプット先としてセットする。
+// 前のファイルにはローテーション時の日時を付与した名前に変更する。
+// 名前の変更に成功してから前のファイルのクローズをしている。
 func (l *fileLogger) rotation() (string, bool) {
 	var rotation bool
 	var fileName string
@@ -216,6 +230,7 @@ func (l *fileLogger) rotation() (string, bool) {
 	return fileName, rotation
 }
 
+// isOverLine ローテーションが必要かチェックする。
 func (l *fileLogger) isOverLine() bool {
 	if l.rotateConf.maxLine <= 0 {
 		return false
@@ -224,6 +239,7 @@ func (l *fileLogger) isOverLine() bool {
 	return lineCount > l.rotateConf.maxLine
 }
 
+// isOverFile セットされているローテーションするファイル数に達しているかチェックする。
 func (l *fileLogger) isOverFile(fileList []os.FileInfo) bool {
 	if l.rotateConf.maxRotation <= 0 {
 		return false
@@ -233,6 +249,7 @@ func (l *fileLogger) isOverFile(fileList []os.FileInfo) bool {
 	return len > l.rotateConf.maxRotation
 }
 
+// deleteOldFile 一番古いログファイルを削除する必要があるかチェックし、必要なら削除する
 func (l *fileLogger) deleteOldFile() error {
 	var err error
 	fileList := containsSTRFileList(l.fm.dir, l.fm.name)
