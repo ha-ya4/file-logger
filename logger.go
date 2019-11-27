@@ -7,11 +7,6 @@ import (
 	"sync"
 )
 
-// エラーメッセージ
-var (
-	ErrFilePath = "missing file path"
-)
-
 // Logger ファイルへログ出力、ログローテーションなどをする
 var Logger *fileLogger
 
@@ -87,6 +82,16 @@ type LogFile struct {
 	custom bool
 }
 
+// newLogFileDefault ログファイルのデフォルトの設定をセットして*LogFileを返す
+func newLogFileDefault(filePath string) *LogFile {
+	fm := newFileNameManager(filePath)
+	return &LogFile{
+		Perm: 0666,
+		flag: os.O_APPEND | os.O_CREATE | os.O_RDWR,
+		fm:   fm,
+	}
+}
+
 // NewLogFileCustom ログファイルの設定を引数として受け取り*LogFileを返す
 func NewLogFileCustom(filePath string, flag int, perm os.FileMode) *LogFile {
 	fm := newFileNameManager(filePath)
@@ -95,16 +100,6 @@ func NewLogFileCustom(filePath string, flag int, perm os.FileMode) *LogFile {
 		flag:   flag,
 		fm:     fm,
 		custom: true,
-	}
-}
-
-// newLogFileDefault ログファイルのデフォルトの設定をセットして*LogFileを返す
-func newLogFileDefault(filePath string) *LogFile {
-	fm := newFileNameManager(filePath)
-	return &LogFile{
-		Perm: 0666,
-		flag: os.O_APPEND | os.O_CREATE | os.O_RDWR,
-		fm:   fm,
 	}
 }
 
@@ -124,6 +119,7 @@ func (l *LogFile) openFile() error {
 	return err
 }
 
+// Custom log.Loggerとファイルの設定をする
 func (l *fileLogger) Custom(lFile *LogFile, lArgs *LoggerArgs) {
 	var file *LogFile
 	var args *LoggerArgs
@@ -144,6 +140,7 @@ func (l *fileLogger) Custom(lFile *LogFile, lArgs *LoggerArgs) {
 	l.logger = log.New(os.Stdout, args.prefix, args.flags)
 }
 
+// SetCallPlace 呼び出し位置と行数を出力するかのフラグをセットする
 func (l *fileLogger) SetCallPlace(flag bool) {
 	l.callPlace = flag
 }
