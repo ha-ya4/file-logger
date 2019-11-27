@@ -1,6 +1,7 @@
 package filelogger
 
 import (
+	"log"
 	"bytes"
 	"compress/gzip"
 	"io"
@@ -12,6 +13,11 @@ import (
 	"strings"
 	"time"
 )
+
+func logPrintln(msg string) {
+	l := log.New(os.Stdout, "[filelogger error] ", log.Ldate | log.Ltime | log.LstdFlags,)
+	l.Println(msg)
+}
 
 type fileNameManager struct {
 	path string
@@ -165,7 +171,26 @@ func compress(w io.Writer, content []byte) error {
 	return err
 }
 
-// Unfreeze gzipで圧縮されたものを解答する
+// CompressFile 指定したファイルをgzip形式で圧縮する
+func CompressFile(path string) error {
+	var err error
+
+	file, err := os.Open(path)
+	b, err := ioutil.ReadAll(file)
+	if err != nil {
+		return err
+	}
+
+	newFile, err := os.Create(path)
+	if err != nil {
+		return err
+	}
+
+	err = compress(newFile, b)
+	return err
+}
+
+// Unfreeze gzipで圧縮されたものを解答する。このパッケージには直接かかわらないが、補助用の関数として書いておく
 func Unfreeze(r io.Reader) (bytes.Buffer, error) {
 	var err error
 	reader, err := gzip.NewReader(r)

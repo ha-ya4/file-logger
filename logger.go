@@ -1,7 +1,6 @@
 package filelogger
 
 import (
-	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
@@ -45,8 +44,8 @@ type RotateConfig struct {
 }
 
 func newfileLogger() *fileLogger {
-	file := NewLogFileDefault("")
-	args := NewLoggerArgsDefault()
+	file := newLogFileDefault("")
+	args := newLoggerArgsDefault()
 
 	return &fileLogger{
 		LogFile:   file,
@@ -62,8 +61,8 @@ type LoggerArgs struct {
 	custom bool
 }
 
-// NewLoggerArgsDefault log.Loggerのデフォルトの設定値を持つ*LoggerArgs返す
-func NewLoggerArgsDefault() *LoggerArgs {
+// newLoggerArgsDefault log.Loggerのデフォルトの設定値を持つ*LoggerArgs返す
+func newLoggerArgsDefault() *LoggerArgs {
 	return &LoggerArgs{
 		prefix: "",
 		flags:  log.Ldate | log.Ltime | log.LstdFlags,
@@ -99,8 +98,8 @@ func NewLogFileCustom(filePath string, flag int, perm os.FileMode) *LogFile {
 	}
 }
 
-// NewLogFileDefault ログファイルのデフォルトの設定をセットして*LogFileを返す
-func NewLogFileDefault(filePath string) *LogFile {
+// newLogFileDefault ログファイルのデフォルトの設定をセットして*LogFileを返す
+func newLogFileDefault(filePath string) *LogFile {
 	fm := newFileNameManager(filePath)
 	return &LogFile{
 		Perm: 0666,
@@ -121,7 +120,6 @@ func (l *LogFile) FileClose() error {
 
 func (l *LogFile) openFile() error {
 	var err error
-
 	l.file, err = os.OpenFile(l.fm.path, l.flag, l.Perm)
 	return err
 }
@@ -133,13 +131,13 @@ func (l *fileLogger) Custom(lFile *LogFile, lArgs *LoggerArgs) {
 	if lFile.custom {
 		file = lFile
 	} else {
-		file = NewLogFileDefault("")
+		file = newLogFileDefault("")
 	}
 
 	if lArgs.custom {
 		args = lArgs
 	} else {
-		args = NewLoggerArgsDefault()
+		args = newLoggerArgsDefault()
 	}
 
 	l.LogFile = file
@@ -162,28 +160,35 @@ func (l *fileLogger) SetRotate(conf RotateConfig) {
 	l.rotateConf = conf
 }
 
+func (l *fileLogger) println(logLevel level, output string) {
+	callPlace := l.findCallPlace()
+	l.logger.Printf("%s%s %s\n", callPlace, logLevel, output)
+}
+
 // Println ログを出力する
 // 最初にロックをかけ、ローテーションが必要なら現在のファイルの名前にローテーション時の日時を付与し、次のファイルに移る。
 // この関数が呼び出されたファイル名と行数を取得し、ログのタイプ、ログと一緒に出力する。
 // ローテーションした場合はロック解除後にファイルの圧縮を行う
-func (l *fileLogger) Println(logLevel level, outputLog string) error {
+func (l *fileLogger) Rprintln(logLevel level, output string) error {
 	var err error
 	l.Mutex.Lock()
-	l.setOutput()
+	err = l.setOutput()
+	handleError(err)
 
 	prevFileName, rotation := l.rotation()
 	if rotation {
-		l.deleteOldFile()
+		err = l.deleteOldFile()
+		handleError(err)
 	}
 
-	callPlace := l.findCallPlace()
-	l.logger.Printf("%s%s %s\n", callPlace, logLevel, outputLog)
+	l.println(logLevel, output)
 
 	l.FileClose()
 	l.Mutex.Unlock()
 
 	if rotation {
-		err = l.compressFile(prevFileName)
+		err = CompressFile(prevFileName)
+		handleError(err)
 	}
 
 	return err
@@ -262,20 +267,8 @@ func (l *fileLogger) deleteOldFile() error {
 	return err
 }
 
-func (l *fileLogger) compressFile(path string) error {
-	var err error
-
-	file, err := os.Open(path)
-	b, err := ioutil.ReadAll(file)
+func handleError(err error) {
 	if err != nil {
-		return err
+		logPrintln(err.Error())
 	}
-
-	newFile, err := os.Create(path)
-	if err != nil {
-		return err
-	}
-
-	err = compress(newFile, b)
-	return err
 }
