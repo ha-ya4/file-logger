@@ -178,7 +178,8 @@ func (l *fileLogger) Rprintln(logLevel level, output string) error {
 		handleError(err)
 	}
 
-	l.println(logLevel, output)
+	callPlace := l.findCallPlace()
+	l.logger.Printf("%s%s %s\n", callPlace, logLevel, output)
 
 	l.FileClose()
 	l.Mutex.Unlock()

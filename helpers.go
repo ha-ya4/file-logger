@@ -68,15 +68,10 @@ func findCallLineAndFile(callFuncName string) (int, string) {
 		pc, file, line, ok = runtime.Caller(i)
 		funcName := runtime.FuncForPC(pc).Name()
 
-		if breakFlag {
-			break
-		}
-
-		if !ok {
-			break
-		}
-
 		breakFlag = strings.Contains(funcName, callFuncName)
+		if breakFlag || !ok {
+			break
+		}
 		i++
 	}
 
@@ -84,7 +79,9 @@ func findCallLineAndFile(callFuncName string) (int, string) {
 }
 
 func callFuncName() string {
-	pc, _, _, _ := runtime.Caller(1)
+	// FileLogger.Rprintの位置
+	const rprintIndex = 3
+	pc, _, _, _ := runtime.Caller(rprintIndex)
 	return runtime.FuncForPC(pc).Name()
 }
 

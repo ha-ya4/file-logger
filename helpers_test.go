@@ -8,7 +8,11 @@ import (
 )
 
 func TestCallFuncName(t *testing.T) {
-	funcName := callFuncName()
+	funcName := func() string {
+		return func() string {
+			return callFuncName()
+		}()
+	}()
 
 	currentPath, _ := os.Getwd()
 	expected := getPath(currentPath) + ".TestCallFuncName"
@@ -19,9 +23,13 @@ func TestCallFuncName(t *testing.T) {
 }
 
 func TestFindCallLineAndFile(t *testing.T) {
-	line, file := callFunc()
+	line, file:= func() (int, string) {
+		return func() (int, string){
+			return callFunc()
+		}()
+	}()
 
-	expectedLine := 22
+	expectedLine := 28
 	if line != expectedLine {
 		t.Errorf("\n行数が一致しません\nline=%d\nexpected=%d", line, expectedLine)
 	}
@@ -35,9 +43,14 @@ func TestFindCallLineAndFile(t *testing.T) {
 }
 
 func TestCreateCallPlaceSTR(t *testing.T) {
-	cps := cps()
-	expectedCPS := "helpers_test.go:38:"
-	t.Log(cps)
+	funcName := func() string {
+		return func() string {
+			return callFuncName()
+		}()
+	}()
+
+	cps := createCallPlaceSTR(funcName)
+	expectedCPS := "helpers_test.go:52:"
 
 	if cps != expectedCPS {
 		t.Errorf("\n呼び出し位置が一致しません\ncps=%s\nexpected=%s", cps, expectedCPS)
