@@ -253,10 +253,8 @@ func (l *fileLogger) isOverFile(fileList []os.FileInfo) bool {
 }
 
 // deleteOldFile 一番古いログファイルを削除する必要があるかチェックし、必要なら削除する
-func (l *fileLogger) deleteOldFile() error {
+func (l *fileLogger) deleteOldFile(fileList []os.FileInfo) error {
 	var err error
-	fileList := containsSTRFileList(l.fm.dir, l.fm.name)
-
 	if l.isOverFile(fileList) {
 		oldFileName := oldFileName(fileList)
 		err = os.Remove(filepath.Join(l.fm.dir, oldFileName))
