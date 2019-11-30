@@ -213,11 +213,13 @@ func (l *fileLogger) setOutput() error {
 // rotation セットされているファイルに書き込む最大行数に達しているかチェックし、必要なら次のファイルを作成しアウトプット先としてセットする。
 // 前のファイルにはローテーション時の日時を付与した名前に変更する。
 // 名前の変更に成功してから前のファイルのクローズをしている。
-func (l *fileLogger) rotation() (string, bool) {
+func (l *fileLogger) rotation() (string, bool, error) {
+	var err error
 	var rotation bool
 	var fileName string
+
 	if !l.isOverLine() {
-		return fileName, rotation
+		return fileName, rotation, err
 	}
 
 	rotation = true
@@ -225,12 +227,15 @@ func (l *fileLogger) rotation() (string, bool) {
 	err = os.Rename(l.fm.path, fileName)
 	if err != nil {
 		rotation = false
-		return fileName, rotation
+		return fileName, rotation, err
 	}
 
 	l.FileClose()
 	l.setOutput()
-	return fileName, rotation
+	fileList := containsSTRFileList(l.fm.dir, l.fm.name)
+	err = l.deleteOldFile(fileList)
+
+	return fileName, rotation, err
 }
 
 // isOverLine ローテーションが必要かチェックする。
