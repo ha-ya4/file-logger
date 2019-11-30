@@ -166,17 +166,14 @@ func (l *fileLogger) println(logLevel level, output string) {
 // 最初にロックをかけ、ローテーションが必要なら現在のファイルの名前にローテーション時の日時を付与し、次のファイルに移る。
 // この関数が呼び出されたファイル名と行数を取得し、ログのタイプ、ログと一緒に出力する。
 // ローテーションした場合はロック解除後にファイルの圧縮を行う
-func (l *fileLogger) Rprintln(logLevel level, output string) error {
+func (l *fileLogger) Rprintln(logLevel level, output string) {
 	var err error
 	l.Mutex.Lock()
 	err = l.setOutput()
 	handleError(err)
 
-	prevFileName, rotation := l.rotation()
-	if rotation {
-		err = l.deleteOldFile()
-		handleError(err)
-	}
+	prevFileName, rotation, err := l.rotation()
+	handleError(err)
 
 	callPlace := l.findCallPlace()
 	l.logger.Printf("%s%s %s\n", callPlace, logLevel, output)
@@ -188,8 +185,6 @@ func (l *fileLogger) Rprintln(logLevel level, output string) error {
 		err = CompressFile(prevFileName)
 		handleError(err)
 	}
-
-	return err
 }
 
 func (l *fileLogger) findCallPlace() string {
