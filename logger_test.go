@@ -1,44 +1,99 @@
 package filelogger
 
 import (
-	"io/ioutil"
 	//"fmt"
-	"strings"
-	"testing"
+	"bufio"
+	"bytes"
 	"os"
-	//"path/filepath"
+	"path/filepath"
+	"strings"
+	"sync"
+	"testing"
 	//"time"
 )
 
-var dirPath = "./logtest"
+var (
+	dirPath  = "./logtest"
+	fileName = "/test.log"
+	filePath = filepath.Join(dirPath, fileName)
+	msg      = "test err"
+	maxLine = 1000
+	maxRotation = 5
+)
 
 func TestMain(m *testing.M) {
 	os.Mkdir(dirPath, 0777)
-	Logger.SetFilePath(dirPath + "/test.log")
+	Logger.SetFilePath(filePath)
+	Logger.SetRotate(RotateConfig{maxLine: maxLine , maxRotation: maxRotation})
+	count := 10
+	println(count)
 
 	code := m.Run()
 
-	os.RemoveAll("./logtest")
-
+	os.RemoveAll(dirPath)
 	os.Exit(code)
 }
 
-// ファイルにログが出力されているかのテスト
-func TestLoggerOutput(t *testing.T) {
-	path := dirPath + "/t.log"
-	Logger.SetFilePath(path)
-	Logger.Rprintln(ERROR, "test err")
+// 圧縮されていないことが期待されるファイルを回答し、nil pointer dereferenceが起こるか確認する
+// 解凍に成功したり、nil pointer dereference以外のエラーならテスト失敗となる
+func TestNoCompress(t *testing.T) {
+	defer func() {
+		err := recover()
+		if err != nil {
+			if e, ok := err.(error); ok {
+				if e.Error() != "runtime error: invalid memory address or nil pointer dereference" {
+					t.Errorf("予期せぬエラーです：%s", err)
+				}
+			}
+		}
+	}()
+	_, e := u(fileName)
 
-	f, err := os.Open(path)
-	tfatal(t, err)
-	b, err := ioutil.ReadAll(f)
-	tfatal(t, err)
-
-	expect := "2019/11/27 23:31: logger_test.go:28:[ERROR] test err"
-
-	if strings.Contains(string(b), expect) {
-		t.Errorf("ERR TestLoggerOutput:\n b=%s\nexpect=%s\n", string(b), expect)
+	if e == nil {
+		t.Errorf("解凍に成功しました：　%v", e)
 	}
+}
+
+// ファイルにログが出力されているかのテスト
+func TestOutput(t *testing.T) {
+	f, err := os.Open(filePath)
+	tfatal(t, err)
+	defer f.Close()
+
+	s := bufio.NewScanner(f)
+	for s.Scan() {
+		ex1 := strings.Contains(s.Text(), "[ERROR] test err")
+		ex2 := strings.Contains(s.Text(), "logger_test.go")
+		if !ex1 && !ex2 {
+			t.Errorf("期待される出力が得られませんでした\n t=%s", s.Text())
+		}
+		break
+	}
+}
+
+func TestLoggerRotation(t *testing.T) {
+
+}
+
+// 指定した回数並行処理でログを出力する
+func println(c int) {
+	wg := &sync.WaitGroup{}
+	for i := 0; i < c; i++ {
+		wg.Add(1)
+		go func() {
+			Logger.Rprintln(ERROR, msg)
+			wg.Done()
+		}()
+	}
+	wg.Wait()
+}
+
+// gzipを解凍する。調査用。
+func u(n string) (bytes.Buffer, error) {
+	fn := filepath.Join(dirPath, n)
+	f, _ := os.Open(fn)
+	b, err := Unfreeze(f)
+	return b, err
 }
 
 func tfatal(t *testing.T, err error) {
