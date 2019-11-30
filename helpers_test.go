@@ -23,8 +23,8 @@ func TestCallFuncName(t *testing.T) {
 }
 
 func TestFindCallLineAndFile(t *testing.T) {
-	line, file:= func() (int, string) {
-		return func() (int, string){
+	line, file := func() (int, string) {
+		return func() (int, string) {
 			return callFunc()
 		}()
 	}()

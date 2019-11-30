@@ -1,21 +1,23 @@
 package filelogger
 
 import (
-	"log"
 	"bytes"
 	"compress/gzip"
 	"io"
 	"io/ioutil"
+	"log"
 	"os"
 	"path/filepath"
 	"runtime"
 	"strconv"
 	"strings"
 	"time"
+	//"fmt"
 )
 
 func logPrintln(msg string) {
-	l := log.New(os.Stdout, "[filelogger error] ", log.Ldate | log.Ltime | log.LstdFlags,)
+	prefix := "[filelogger error] "
+	l := log.New(os.Stdout, prefix, log.Ldate|log.Ltime|log.LstdFlags)
 	l.Println(msg)
 }
 
@@ -80,7 +82,7 @@ func findCallLineAndFile(callFuncName string) (int, string) {
 
 func callFuncName() string {
 	// FileLogger.Rprintの位置
-	const rprintIndex = 3
+	rprintIndex := 3
 	pc, _, _, _ := runtime.Caller(rprintIndex)
 	return runtime.FuncForPC(pc).Name()
 }
