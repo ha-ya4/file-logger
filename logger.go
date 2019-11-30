@@ -235,7 +235,7 @@ func (l *fileLogger) rotation() (string, bool) {
 
 // isOverLine ローテーションが必要かチェックする。
 func (l *fileLogger) isOverLine() bool {
-	if l.rotateConf.maxLine <= 0 {
+	if l.rotateConf.maxLine <= 1 {
 		return false
 	}
 	lineCount, _ := lineCounter(l.file)
@@ -244,12 +244,11 @@ func (l *fileLogger) isOverLine() bool {
 
 // isOverFile セットされているローテーションするファイル数に達しているかチェックする。
 func (l *fileLogger) isOverFile(fileList []os.FileInfo) bool {
-	if l.rotateConf.maxRotation <= 0 {
+	if l.rotateConf.maxRotation <= 1 {
 		return false
 	}
 
-	len := len(fileList)
-	return len > l.rotateConf.maxRotation
+	return len(fileList) > l.rotateConf.maxRotation
 }
 
 // deleteOldFile 一番古いログファイルを削除する必要があるかチェックし、必要なら削除する
