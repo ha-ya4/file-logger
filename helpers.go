@@ -35,7 +35,7 @@ func newFileNameManager(path string) *fileNameManager {
 	}
 }
 
-const timeFormat = "Jan 2 15:04:05 2006"
+const timeFormat = "Jan 2 15:04:05.000000000 2006"
 
 // getNameAddTimeNow ファイル名の先頭に現在の日時を付与した名前を返す
 func (f *fileNameManager) getNameAddTimeNow() string {
