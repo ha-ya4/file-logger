@@ -1,32 +1,32 @@
 package filelogger
 
 import (
-	//"fmt"
 	"bufio"
 	"bytes"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
 	"sync"
 	"testing"
-	//"time"
 )
 
 var (
-	dirPath  = "./logtest"
-	fileName = "/test.log"
-	filePath = filepath.Join(dirPath, fileName)
-	msg      = "test err"
-	maxLine = 1000
+	dirPath     = "./logtest"
+	fileName    = "/test.log"
+	filePath    = filepath.Join(dirPath, fileName)
+	msg         = "test err"
+	maxLine     = 100
 	maxRotation = 5
+	testCount   = 10000 // 回数が少ないとテスト失敗の可能性あり
 )
 
+// テスト用ディレクトリを作成しテスト終了後に削除する。ローテーションの設定もここで行う
 func TestMain(m *testing.M) {
 	os.Mkdir(dirPath, 0777)
 	Logger.SetFilePath(filePath)
-	Logger.SetRotate(RotateConfig{maxLine: maxLine , maxRotation: maxRotation})
-	count := 10
-	println(count)
+	Logger.SetRotate(RotateConfig{maxLine: maxLine, maxRotation: maxRotation})
+	forPrintln(testCount)
 
 	code := m.Run()
 
@@ -34,7 +34,7 @@ func TestMain(m *testing.M) {
 	os.Exit(code)
 }
 
-// 圧縮されていないことが期待されるファイルを回答し、nil pointer dereferenceが起こるか確認する
+// 圧縮されていないことが期待されるファイルを解凍し、nil pointer dereferenceが起こるか確認する
 // 解凍に成功したり、nil pointer dereference以外のエラーならテスト失敗となる
 func TestNoCompress(t *testing.T) {
 	defer func() {
@@ -71,12 +71,25 @@ func TestOutput(t *testing.T) {
 	}
 }
 
-func TestLoggerRotation(t *testing.T) {
+// 最新のファイル以外が圧縮されているか
+func TestCompress(t *testing.T) {}
 
+// 指定した最大行数で次のファイルに移行しているか
+func TestMaxLine(t *testing.T) {}
+
+// 指定した最大ファイル数でローテーションしているか
+func TestRotation(t *testing.T) {
+	fi, err := ioutil.ReadDir(dirPath)
+	tfatal(t, err)
+	result := len(fi)
+	expected := maxRotation
+	if result != expected {
+		t.Errorf("設定されたファイル数でローテーションされていません\n r=%v e=%v", result, expected)
+	}
 }
 
 // 指定した回数並行処理でログを出力する
-func println(c int) {
+func forPrintln(c int) {
 	wg := &sync.WaitGroup{}
 	for i := 0; i < c; i++ {
 		wg.Add(1)
