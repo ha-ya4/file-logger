@@ -189,7 +189,7 @@ func CompressFile(path string) error {
 	return err
 }
 
-// Unfreeze gzipで圧縮されたものを解答する。このパッケージには直接かかわらないが、補助用の関数として書いておく
+// Unfreeze gzipで圧縮されたものを解凍する。このパッケージには直接かかわらないが、補助用の関数として書いておく
 func Unfreeze(r io.Reader) (bytes.Buffer, error) {
 	var err error
 	reader, err := gzip.NewReader(r)

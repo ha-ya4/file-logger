@@ -13,7 +13,7 @@ import (
 
 var (
 	dirPath     = "./logtest"
-	fileName    = "/test.log"
+	fileName    = "test.log"
 	filePath    = filepath.Join(dirPath, fileName)
 	msg         = "test err"
 	maxLine     = 100
@@ -71,8 +71,27 @@ func TestOutput(t *testing.T) {
 	}
 }
 
-// 最新のファイル以外が圧縮されているか
-func TestCompress(t *testing.T) {}
+// 最新のファイル以外が圧縮されているか。Unfreezeがエラーを返さなければ圧縮されているとみなす
+func TestCompress(t *testing.T) {
+	fi, err := ioutil.ReadDir(dirPath)
+	tfatal(t, err)
+	for _, f := range fi {
+		// 圧縮されていないファイルを飛ばす
+		if f.Name() == fileName {
+			continue
+		}
+
+		path := filepath.Join(dirPath, f.Name())
+		f, err := os.Open(path)
+	  tfatal(t, err)
+	  defer f.Close()
+		_, e := Unfreeze(f)
+
+		if e != nil {
+			t.Errorf("ファイルの解凍に失敗しました: name=%s", f.Name())
+		}
+	}
+}
 
 // 指定した最大行数で次のファイルに移行しているか
 func TestMaxLine(t *testing.T) {}
