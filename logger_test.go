@@ -3,6 +3,7 @@ package filelogger
 import (
 	"bufio"
 	"bytes"
+	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -18,11 +19,24 @@ var (
 	msg         = "test err"
 	maxLine     = 100
 	maxRotation = 5
-	testCount   = 10000 // 回数が少ないとテスト失敗の可能性あり
+	testCount   = 100000 // 回数が少ないとテスト失敗の可能性あり
 )
 
 // テスト用ディレクトリを作成しテスト終了後に削除する。ローテーションの設定もここで行う
+// testCountが大きすぎるとgoroutineがおかしく？なってpanicしてしまうのでifでチェックして必要ならpanicする
+// (おそらくgoroutineの立ち上げすぎが原因だと思う)
+// 特定の値以下だとテストに失敗するのでifでチェックし必要ならpanicする
 func TestMain(m *testing.M) {
+	if testCount > 100000 {
+		panic("logger_test.go: testCountは100000までの数値にしてください")
+	}
+
+	c := maxLine * maxRotation - maxLine + 1
+	if testCount < c {
+		msg := fmt.Sprintf("logger_test.go: testCountは%vより大きい数値にしてください", c)
+		panic(msg)
+	}
+
 	os.Mkdir(dirPath, 0777)
 	Logger.SetFilePath(filePath)
 	Logger.SetRotate(RotateConfig{maxLine: maxLine, maxRotation: maxRotation})
@@ -83,8 +97,8 @@ func TestCompress(t *testing.T) {
 
 		path := filepath.Join(dirPath, f.Name())
 		f, err := os.Open(path)
-	  tfatal(t, err)
-	  defer f.Close()
+		tfatal(t, err)
+		defer f.Close()
 		_, e := Unfreeze(f)
 
 		if e != nil {
@@ -94,7 +108,27 @@ func TestCompress(t *testing.T) {
 }
 
 // 指定した最大行数で次のファイルに移行しているか
-func TestMaxLine(t *testing.T) {}
+func TestMaxLine(t *testing.T) {
+	fi, err := ioutil.ReadDir(dirPath)
+	tfatal(t, err)
+
+	ofn := oldFileName(fi)
+	path := filepath.Join(dirPath, ofn)
+	f, err := os.Open(path)
+	defer f.Close()
+	tfatal(t, err)
+
+	b, err := Unfreeze(f)
+	tfatal(t, err)
+
+	result, err := lineCounter(b)
+	tfatal(t, err)
+	expected := maxLine + 1 // 改行が入るので指定した値に+1する
+
+	if result != expected {
+		t.Errorf("指定した最大行数と一致していません：\nr=%v\ne=%v", result, expected)
+	}
+}
 
 // 指定した最大ファイル数でローテーションしているか
 func TestRotation(t *testing.T) {
@@ -121,7 +155,7 @@ func forPrintln(c int) {
 }
 
 // gzipを解凍する。調査用。
-func u(n string) (bytes.Buffer, error) {
+func u(n string) (*bytes.Buffer, error) {
 	fn := filepath.Join(dirPath, n)
 	f, _ := os.Open(fn)
 	b, err := Unfreeze(f)

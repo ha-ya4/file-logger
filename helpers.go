@@ -190,10 +190,10 @@ func CompressFile(path string) error {
 }
 
 // Unfreeze gzipで圧縮されたものを解凍する。このパッケージには直接かかわらないが、補助用の関数として書いておく
-func Unfreeze(r io.Reader) (bytes.Buffer, error) {
+func Unfreeze(r io.Reader) (*bytes.Buffer, error) {
 	var err error
 	reader, err := gzip.NewReader(r)
-	b := bytes.Buffer{}
+	b := &bytes.Buffer{}
 	b.ReadFrom(reader)
 	reader.Close()
 	return b, err
