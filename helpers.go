@@ -54,7 +54,7 @@ func createCallPlaceSTR(callFuncName string) string {
 	return name + ":" + strconv.Itoa(line) + ":"
 }
 
-// iをインクリメントしていってスタックトレースを遡り,FileLoggerのprint系メソッドが呼び出された次のトレースのラインとファイル名を返す
+// iをインクリメントしていってスタックトレースを遡り,引数として受け取った関数名の場所を探し、ファイル名と行数を返す
 func findCallLineAndFile(callFuncName string) (int, string) {
 	var (
 		pc        uintptr
@@ -65,7 +65,6 @@ func findCallLineAndFile(callFuncName string) (int, string) {
 		i         int
 	)
 
-	// 呼び出した関数の次の情報がほしいので、ブレークするべきかは先に確認し、最後にフラグの操作をする
 	for {
 		pc, file, line, ok = runtime.Caller(i)
 		funcName := runtime.FuncForPC(pc).Name()
@@ -80,10 +79,9 @@ func findCallLineAndFile(callFuncName string) (int, string) {
 	return line, file
 }
 
-func callFuncName() string {
-	// FileLogger.Rprintの位置
-	rprintIndex := 3
-	pc, _, _, _ := runtime.Caller(rprintIndex)
+// 引数で指定したスタックトレースの階層の関数名を返す
+func callFuncName(depth int) string {
+	pc, _, _, _ := runtime.Caller(depth)
 	return runtime.FuncForPC(pc).Name()
 }
 

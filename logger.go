@@ -177,6 +177,8 @@ func (l *fileLogger) Rprintln(logLevel level, output string) {
 
 	callPlace := l.findCallPlace()
 	l.logger.Printf("%s%s %s\n", callPlace, logLevel, output)
+	depth := 4
+	l.println(logLevel, output, depth)
 
 	l.FileClose()
 	l.Mutex.Unlock()
@@ -187,10 +189,10 @@ func (l *fileLogger) Rprintln(logLevel level, output string) {
 	}
 }
 
-func (l *fileLogger) findCallPlace() string {
+func (l *fileLogger) createCallPlace(depth int) string {
 	var cp string
 	if l.callPlace {
-		funcName := callFuncName()
+		funcName := callFuncName(depth)
 		cp = createCallPlaceSTR(funcName)
 	}
 	return cp
