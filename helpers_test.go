@@ -7,12 +7,34 @@ import (
 	"testing"
 )
 
+// /home/user/golang/src/github.com/ha-ya4/my-package/file-logger/file-logger.TestCallFuncName
+// github.com/ha-ya4/my-package/file-logger.TestCallFuncNameの形にする
+func getPath(fullPath string) string {
+	pathArray := strings.Split(fullPath, "/")
+	var flag bool
+	var path string
+
+	for _, s := range pathArray {
+		if s == "github.com" {
+			flag = true
+		}
+
+		if flag {
+			path += s
+			path += "/"
+		}
+	}
+
+	return strings.TrimSuffix(path, "/")
+}
+
+func callLineAndFile() (int, string) {
+	funcName := callFuncName(1)
+	return findCallLineAndFile(funcName)
+}
+
 func TestCallFuncName(t *testing.T) {
-	funcName := func() string {
-		return func() string {
-			return callFuncName()
-		}()
-	}()
+	funcName := callFuncName(1)
 
 	currentPath, _ := os.Getwd()
 	expected := getPath(currentPath) + ".TestCallFuncName"
@@ -23,13 +45,9 @@ func TestCallFuncName(t *testing.T) {
 }
 
 func TestFindCallLineAndFile(t *testing.T) {
-	line, file := func() (int, string) {
-		return func() (int, string) {
-			return callFunc()
-		}()
-	}()
+	line, file := callLineAndFile()
 
-	expectedLine := 28
+	expectedLine := 33
 	if line != expectedLine {
 		t.Errorf("\n行数が一致しません\nline=%d\nexpected=%d", line, expectedLine)
 	}
@@ -43,14 +61,10 @@ func TestFindCallLineAndFile(t *testing.T) {
 }
 
 func TestCreateCallPlaceSTR(t *testing.T) {
-	funcName := func() string {
-		return func() string {
-			return callFuncName()
-		}()
-	}()
+	funcName := callFuncName(1)
 
 	cps := createCallPlaceSTR(funcName)
-	expectedCPS := "helpers_test.go:52:"
+	expectedCPS := "helpers_test.go:66:"
 
 	if cps != expectedCPS {
 		t.Errorf("\n呼び出し位置が一致しません\ncps=%s\nexpected=%s", cps, expectedCPS)
@@ -100,35 +114,4 @@ func TestCompressAndUnfreeze(t *testing.T) {
 	if bb.String() != string(c) {
 		t.Errorf("TestCompressAndUnfreeze: 期待される結果が得られませんでした\nunfreezw=%s\nexpected=%s", bb.String(), string(c))
 	}
-}
-
-// /home/user/golang/src/github.com/ha-ya4/my-package/file-logger/file-logger.TestCallFuncName
-// github.com/ha-ya4/my-package/file-logger.TestCallFuncNameの形にする
-func getPath(fullPath string) string {
-	pathArray := strings.Split(fullPath, "/")
-	var flag bool
-	var path string
-
-	for _, s := range pathArray {
-		if s == "github.com" {
-			flag = true
-		}
-
-		if flag {
-			path += s
-			path += "/"
-		}
-	}
-
-	return strings.TrimSuffix(path, "/")
-}
-
-func callFunc() (int, string) {
-	funcName := callFuncName()
-	return findCallLineAndFile(funcName)
-}
-
-func cps() string {
-	funcName := callFuncName()
-	return createCallPlaceSTR(funcName)
 }
