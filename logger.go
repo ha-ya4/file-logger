@@ -27,8 +27,6 @@ func Rprintln(logLevel level, output string) {
 	prevFileName, rotation, err := Logger.rotation()
 	handleError(err)
 
-	//callPlace := l.createCallPlace()
-	//l.logger.Printf("%s%s %s\n", callPlace, logLevel, output)
 	depth := 4
 	Logger.println(logLevel, output, depth)
 
