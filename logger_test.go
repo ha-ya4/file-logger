@@ -147,7 +147,7 @@ func forPrintln(c int) {
 	for i := 0; i < c; i++ {
 		wg.Add(1)
 		go func() {
-			Logger.Rprintln(ERROR, msg)
+			Rprintln(ERROR, msg)
 			wg.Done()
 		}()
 	}

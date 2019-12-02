@@ -14,6 +14,33 @@ func init() {
 	Logger = newfileLogger()
 }
 
+// Rprintln ログを出力する
+// 最初にロックをかけ、ローテーションが必要なら現在のファイルの名前にローテーション時の日時を付与し、次のファイルに移る。
+// この関数が呼び出されたファイル名と行数を取得し、ログのタイプ、ログと一緒に出力する。
+// ローテーションした場合はロック解除後にファイルの圧縮を行う
+func Rprintln(logLevel level, output string) {
+	var err error
+	Logger.Mutex.Lock()
+	err = Logger.setOutput()
+	handleError(err)
+
+	prevFileName, rotation, err := Logger.rotation()
+	handleError(err)
+
+	//callPlace := l.createCallPlace()
+	//l.logger.Printf("%s%s %s\n", callPlace, logLevel, output)
+	depth := 4
+	Logger.println(logLevel, output, depth)
+
+	Logger.FileClose()
+	Logger.Mutex.Unlock()
+
+	if rotation {
+		err = CompressFile(prevFileName)
+		handleError(err)
+	}
+}
+
 type level string
 
 // loglevel?
@@ -157,36 +184,9 @@ func (l *fileLogger) SetRotate(conf RotateConfig) {
 	l.rotateConf = conf
 }
 
-func (l *fileLogger) println(logLevel level, output string) {
-	callPlace := l.findCallPlace()
+func (l *fileLogger) println(logLevel level, output string, depth int) {
+	callPlace := l.createCallPlace(depth)
 	l.logger.Printf("%s%s %s\n", callPlace, logLevel, output)
-}
-
-// Println ログを出力する
-// 最初にロックをかけ、ローテーションが必要なら現在のファイルの名前にローテーション時の日時を付与し、次のファイルに移る。
-// この関数が呼び出されたファイル名と行数を取得し、ログのタイプ、ログと一緒に出力する。
-// ローテーションした場合はロック解除後にファイルの圧縮を行う
-func (l *fileLogger) Rprintln(logLevel level, output string) {
-	var err error
-	l.Mutex.Lock()
-	err = l.setOutput()
-	handleError(err)
-
-	prevFileName, rotation, err := l.rotation()
-	handleError(err)
-
-	callPlace := l.findCallPlace()
-	l.logger.Printf("%s%s %s\n", callPlace, logLevel, output)
-	depth := 4
-	l.println(logLevel, output, depth)
-
-	l.FileClose()
-	l.Mutex.Unlock()
-
-	if rotation {
-		err = CompressFile(prevFileName)
-		handleError(err)
-	}
 }
 
 func (l *fileLogger) createCallPlace(depth int) string {
