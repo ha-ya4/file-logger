@@ -59,8 +59,8 @@ type fileLogger struct {
 
 // RotateConfig ローテーションの設定をする構造体
 type RotateConfig struct {
-	maxLine     int // 何行で次のファイルに移るか
-	maxRotation int // ファイル何枚ででローテーションするか
+	MaxLine     int // 何行で次のファイルに移るか
+	MaxRotation int // ファイル何枚ででローテーションするか
 }
 
 func newfileLogger() *fileLogger {
@@ -235,20 +235,20 @@ func (l *fileLogger) rotation() (string, bool, error) {
 
 // isOverLine ローテーションが必要かチェックする。
 func (l *fileLogger) isOverLine() bool {
-	if l.rotateConf.maxLine <= 1 {
+	if l.rotateConf.MaxLine <= 1 {
 		return false
 	}
 	lineCount, _ := lineCounter(l.file)
-	return lineCount > l.rotateConf.maxLine
+	return lineCount > l.rotateConf.MaxLine
 }
 
 // isOverFile セットされているローテーションするファイル数に達しているかチェックする。
 func (l *fileLogger) isOverFile(fileList []os.FileInfo) bool {
-	if l.rotateConf.maxRotation <= 1 {
+	if l.rotateConf.MaxRotation <= 1 {
 		return false
 	}
 
-	return len(fileList) > l.rotateConf.maxRotation
+	return len(fileList) > l.rotateConf.MaxRotation
 }
 
 // deleteOldFile 一番古いログファイルを削除する必要があるかチェックし、必要なら削除する
