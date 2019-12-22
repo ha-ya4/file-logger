@@ -38,6 +38,12 @@ func Rprintln(logLevel level, output string) {
 	}
 }
 
+// LogPrintln パッケージlogのPrintln関数に引数のmsgを渡すだけの関数
+// パッケージ使用側でパッケージlogをインポートしなくて済むように
+func LogPrintln(msg string) {
+	log.Println(msg)
+}
+
 type level string
 
 // loglevel?
