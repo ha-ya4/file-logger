@@ -31,7 +31,7 @@ func TestMain(m *testing.M) {
 		panic("logger_test.go: testCountは100000までの数値にしてください")
 	}
 
-	c := maxLine * maxRotation - maxLine + 1
+	c := maxLine*maxRotation - maxLine + 1
 	if testCount < c {
 		msg := fmt.Sprintf("logger_test.go: testCountは%vより大きい数値にしてください", c)
 		panic(msg)

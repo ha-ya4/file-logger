@@ -27,8 +27,7 @@ func Rprintln(logLevel level, output string) {
 	prevFileName, rotation, err := Logger.rotation()
 	handleError(err)
 
-	depth := 4
-	Logger.println(logLevel, output, depth)
+	Logger.println(logLevel, output, Logger.depth)
 
 	Logger.FileClose()
 	Logger.Mutex.Unlock()
@@ -55,6 +54,7 @@ type fileLogger struct {
 	logger     *log.Logger
 	rotateConf RotateConfig
 	callPlace  bool
+	depth      int
 }
 
 // RotateConfig ローテーションの設定をする構造体
@@ -71,6 +71,7 @@ func newfileLogger() *fileLogger {
 		LogFile:   file,
 		logger:    log.New(os.Stdout, args.prefix, args.flags),
 		callPlace: true,
+		depth:     4,
 	}
 }
 
@@ -176,6 +177,10 @@ func (l *fileLogger) SetPrefix(prefix string) {
 
 func (l *fileLogger) SetFlags(flags int) {
 	l.logger.SetFlags(flags)
+}
+
+func (l *fileLogger) SetDepth(depth int) {
+	l.depth = depth
 }
 
 func (l *fileLogger) SetRotate(conf RotateConfig) {
