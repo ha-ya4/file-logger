@@ -38,8 +38,8 @@ func TestMain(m *testing.M) {
 	}
 
 	os.Mkdir(dirPath, 0777)
-	Logger.SetFilePath(filePath)
-	Logger.SetRotate(RotateConfig{MaxLine: maxLine, MaxRotation: maxRotation})
+	SetFilePath(filePath)
+	SetRotate(RotateConfig{MaxLine: maxLine, MaxRotation: maxRotation})
 	forPrintln(testCount)
 
 	code := m.Run()

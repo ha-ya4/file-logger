@@ -14,50 +14,11 @@ func init() {
 	Logger = newfileLogger()
 }
 
-// Rprintln ログを出力する
-// 最初にロックをかけ、ローテーションが必要なら現在のファイルの名前にローテーション時の日時を付与し、次のファイルに移る。
-// この関数が呼び出されたファイル名と行数を取得し、ログのタイプ、ログと一緒に出力する。
-// ローテーションした場合はロック解除後にファイルの圧縮を行う
-func Rprintln(logLevel level, output string) {
-	var err error
-	Logger.Mutex.Lock()
-	err = Logger.setOutput()
-	handleError(err)
-
-	prevFileName, rotation, err := Logger.rotation()
-	handleError(err)
-
-	Logger.println(logLevel, output, Logger.depth)
-
-	Logger.FileClose()
-	Logger.Mutex.Unlock()
-
-	if rotation {
-		err = CompressFile(prevFileName)
-		handleError(err)
-	}
-}
-
-// LogPrintln パッケージlogのPrintln関数に引数のmsgを渡すだけの関数
-// パッケージ使用側でパッケージlogをインポートしなくて済むように
-func LogPrintln(msg string) {
-	log.Println(msg)
-}
-
-type level string
-
-// loglevel?
-const (
-	DEBUG = level("[DEBUG]")
-	INFO  = level("[INFO]")
-	WARN  = level("[WARN]")
-	ERROR = level("[ERROR]")
-)
-
 type fileLogger struct {
 	sync.Mutex
 	*LogFile
 	logger     *log.Logger
+	mode       logMode // ログレベルによる出力の有無を切り替えるためのモード
 	rotateConf RotateConfig
 	callPlace  bool
 	depth      int
@@ -76,6 +37,7 @@ func newfileLogger() *fileLogger {
 	return &fileLogger{
 		LogFile:   file,
 		logger:    log.New(os.Stdout, args.prefix, args.flags),
+		mode:      ModeDebug,
 		callPlace: true,
 		depth:     4,
 	}
@@ -135,11 +97,6 @@ func NewLogFileCustom(filePath string, flag int, perm os.FileMode) *LogFile {
 	}
 }
 
-// SetFilePath 受け取ったログファイルのpathをnewFileNameManagerに渡し、それをfmフィールドにセットする
-func (l *LogFile) SetFilePath(path string) {
-	l.fm = newFileNameManager(path)
-}
-
 // FileClose ファイルをクローズする
 func (l *LogFile) FileClose() error {
 	return l.file.Close()
@@ -172,30 +129,9 @@ func (l *fileLogger) Custom(lFile *LogFile, lArgs *LoggerArgs) {
 	l.logger = log.New(os.Stdout, args.prefix, args.flags)
 }
 
-// SetCallPlace 呼び出し位置と行数を出力するかのフラグをセットする
-func (l *fileLogger) SetCallPlace(flag bool) {
-	l.callPlace = flag
-}
-
-func (l *fileLogger) SetPrefix(prefix string) {
-	l.logger.SetPrefix(prefix)
-}
-
-func (l *fileLogger) SetFlags(flags int) {
-	l.logger.SetFlags(flags)
-}
-
-func (l *fileLogger) SetDepth(depth int) {
-	l.depth = depth
-}
-
-func (l *fileLogger) SetRotate(conf RotateConfig) {
-	l.rotateConf = conf
-}
-
-func (l *fileLogger) println(logLevel level, output string, depth int) {
+func (l *fileLogger) println(logLevel logLevel, output string, depth int) {
 	callPlace := l.createCallPlace(depth)
-	l.logger.Printf("%s%s %s\n", callPlace, logLevel, output)
+	l.logger.Printf("%s[%s] %s\n", callPlace, logLevel, output)
 }
 
 func (l *fileLogger) createCallPlace(depth int) string {

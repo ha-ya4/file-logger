@@ -87,7 +87,7 @@ func TestContainsSTRFileList(t *testing.T) {
 	fileName := ".go"
 	fileList := containsSTRFileList(path, fileName)
 	len := len(fileList)
-	expectedLen := 4
+	expectedLen := 7
 
 	if len != expectedLen {
 		t.Errorf("\n期待されるファイル数ではありません\ncount=%d\nexpected=%d", len, expectedLen)
