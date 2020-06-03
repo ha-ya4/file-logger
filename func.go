@@ -21,7 +21,7 @@ func Rprintln(logLevel logLevel, output string) {
 	prevFileName, rotation, err := Logger.rotation()
 	handleError(err)
 
-	Logger.logger.Printf("[%s] %s\n", logLevel, output)
+	Logger.Logger.Printf("[%s] %s\n", logLevel, output)
 
 	Logger.FileClose()
 	Logger.Mutex.Unlock()
@@ -51,15 +51,10 @@ func SetFilePath(path string) {
 	Logger.fm = newFileNameManager(path)
 }
 
-// SetCallPlace 呼び出し位置と行数を出力するかのフラグをセットする
-func SetCallPlace(flag bool) {
-	Logger.callPlace = flag
-}
-
 func SetPrefix(prefix string) {
-	Logger.logger.SetPrefix(prefix)
+	Logger.Logger.SetPrefix(prefix)
 }
 
 func SetFlags(flags int) {
-	Logger.logger.SetFlags(flags)
+	Logger.Logger.SetFlags(flags)
 }

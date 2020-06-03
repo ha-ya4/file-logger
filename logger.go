@@ -17,11 +17,9 @@ func init() {
 type fileLogger struct {
 	sync.Mutex
 	*LogFile
-	logger     *log.Logger
+	Logger     *log.Logger
 	mode       logMode // ログレベルによる出力の有無を切り替えるためのモード
 	rotateConf RotateConfig
-	callPlace  bool
-	depth      int
 }
 
 // RotateConfig ローテーションの設定をする構造体
@@ -36,7 +34,7 @@ func newfileLogger() *fileLogger {
 
 	return &fileLogger{
 		LogFile:   file,
-		logger:    log.New(os.Stdout, args.prefix, args.flags),
+		Logger:    log.New(os.Stdout, args.prefix, args.flags),
 		mode:      ModeDebug,
 		callPlace: true,
 		depth:     4,
@@ -126,14 +124,14 @@ func (l *fileLogger) Custom(lFile *LogFile, lArgs *LoggerArgs) {
 	}
 
 	l.LogFile = file
-	l.logger = log.New(os.Stdout, args.prefix, args.flags)
+	l.Logger = log.New(os.Stdout, args.prefix, args.flags)
 }
 
 func (l *fileLogger) setOutput() error {
 	var err error
 	err = l.openFile()
 	if err == nil {
-		l.logger.SetOutput(l.file)
+		l.Logger.SetOutput(l.file)
 	}
 	return err
 }
