@@ -56,15 +56,6 @@ func newLoggerArgsDefault() *LoggerArgs {
 	}
 }
 
-// NewLoggerArgsCustom log.Loggerの設定値を引数として受け取り、*LoggerArgsを返す
-func NewLoggerArgsCustom(prefix string, flags int) *LoggerArgs {
-	return &LoggerArgs{
-		prefix: prefix,
-		flags:  flags,
-		custom: true,
-	}
-}
-
 // LogFile ログファイルの設定、pathファイル自体を保持する構造体
 type LogFile struct {
 	Perm   os.FileMode
@@ -84,17 +75,6 @@ func newLogFileDefault(filePath string) *LogFile {
 	}
 }
 
-// NewLogFileCustom ログファイルの設定を引数として受け取り*LogFileを返す
-func NewLogFileCustom(filePath string, flag int, perm os.FileMode) *LogFile {
-	fm := newFileNameManager(filePath)
-	return &LogFile{
-		Perm:   perm,
-		flag:   flag,
-		fm:     fm,
-		custom: true,
-	}
-}
-
 // FileClose ファイルをクローズする
 func (l *LogFile) FileClose() error {
 	return l.file.Close()
@@ -104,27 +84,6 @@ func (l *LogFile) openFile() error {
 	var err error
 	l.file, err = os.OpenFile(l.fm.path, l.flag, l.Perm)
 	return err
-}
-
-// Custom log.Loggerとファイルの設定をする
-func (l *fileLogger) Custom(lFile *LogFile, lArgs *LoggerArgs) {
-	var file *LogFile
-	var args *LoggerArgs
-
-	if lFile.custom {
-		file = lFile
-	} else {
-		file = newLogFileDefault("")
-	}
-
-	if lArgs.custom {
-		args = lArgs
-	} else {
-		args = newLoggerArgsDefault()
-	}
-
-	l.LogFile = file
-	l.Logger = log.New(os.Stdout, args.prefix, args.flags)
 }
 
 func (l *fileLogger) setOutput() error {
