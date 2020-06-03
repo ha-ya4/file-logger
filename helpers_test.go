@@ -3,73 +3,8 @@ package filelogger
 import (
 	"bytes"
 	"os"
-	"strings"
 	"testing"
 )
-
-// /home/user/golang/src/github.com/ha-ya4/my-package/file-logger/file-logger.TestCallFuncName
-// github.com/ha-ya4/my-package/file-logger.TestCallFuncNameの形にする
-func getPath(fullPath string) string {
-	pathArray := strings.Split(fullPath, "/")
-	var flag bool
-	var path string
-
-	for _, s := range pathArray {
-		if s == "github.com" {
-			flag = true
-		}
-
-		if flag {
-			path += s
-			path += "/"
-		}
-	}
-
-	return strings.TrimSuffix(path, "/")
-}
-
-func callLineAndFile() (int, string) {
-	funcName := callFuncName(1)
-	return findCallLineAndFile(funcName)
-}
-
-func TestCallFuncName(t *testing.T) {
-	funcName := callFuncName(1)
-
-	currentPath, _ := os.Getwd()
-	expected := getPath(currentPath) + ".TestCallFuncName"
-
-	if funcName != expected {
-		t.Errorf("\n関数名が一致していません\nfuncName=%s\nexpected=%s", funcName, expected)
-	}
-}
-
-func TestFindCallLineAndFile(t *testing.T) {
-	line, file := callLineAndFile()
-
-	expectedLine := 33
-	if line != expectedLine {
-		t.Errorf("\n行数が一致しません\nline=%d\nexpected=%d", line, expectedLine)
-	}
-
-	path := getPath(file)
-	currentPath, _ := os.Getwd()
-	expectedPath := getPath(currentPath) + "/helpers_test.go"
-	if path != expectedPath {
-		t.Errorf("\nファイル名が一致していません\nfile=%s\nexpected=%s", path, expectedPath)
-	}
-}
-
-func TestCreateCallPlaceSTR(t *testing.T) {
-	funcName := callFuncName(1)
-
-	cps := createCallPlaceSTR(funcName)
-	expectedCPS := "helpers_test.go:66:"
-
-	if cps != expectedCPS {
-		t.Errorf("\n呼び出し位置が一致しません\ncps=%s\nexpected=%s", cps, expectedCPS)
-	}
-}
 
 func TestLineCounter(t *testing.T) {
 	file, _ := os.Open("./helpers_test.txt")

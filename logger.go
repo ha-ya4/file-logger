@@ -129,20 +129,6 @@ func (l *fileLogger) Custom(lFile *LogFile, lArgs *LoggerArgs) {
 	l.logger = log.New(os.Stdout, args.prefix, args.flags)
 }
 
-func (l *fileLogger) println(logLevel logLevel, output string, depth int) {
-	callPlace := l.createCallPlace(depth)
-	l.logger.Printf("%s[%s] %s\n", callPlace, logLevel, output)
-}
-
-func (l *fileLogger) createCallPlace(depth int) string {
-	var cp string
-	if l.callPlace {
-		funcName := callFuncName(depth)
-		cp = createCallPlaceSTR(funcName)
-	}
-	return cp
-}
-
 func (l *fileLogger) setOutput() error {
 	var err error
 	err = l.openFile()

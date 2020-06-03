@@ -8,8 +8,6 @@ import (
 	"log"
 	"os"
 	"path/filepath"
-	"runtime"
-	"strconv"
 	"strings"
 	"time"
 	//"fmt"
@@ -43,46 +41,6 @@ const timeFormat = "Jan 2 15:04:05.000000000 2006"
 func (f *fileNameManager) getNameAddTimeNow() string {
 	now := time.Now().Format(timeFormat)
 	return now + "_" + f.name
-}
-
-// ファイル名と行数を main.go:145: のような形に結合する
-// shortFileNameはos.Getwdのエラーを返すが、ここでエラーがでても（おそらく）短くできなかった元のカレントディレクトリ名が返ってくると思うのでerrorは無視する
-// その場合は長いままのディレクトリ名で出力する
-func createCallPlaceSTR(callFuncName string) string {
-	line, file := findCallLineAndFile(callFuncName)
-	name := filepath.Base(file)
-	return name + ":" + strconv.Itoa(line) + ":"
-}
-
-// iをインクリメントしていってスタックトレースを遡り,引数として受け取った関数名の場所を探し、ファイル名と行数を返す
-func findCallLineAndFile(callFuncName string) (int, string) {
-	var (
-		pc        uintptr
-		file      string
-		line      int
-		ok        bool
-		breakFlag bool
-		i         int
-	)
-
-	for {
-		pc, file, line, ok = runtime.Caller(i)
-		funcName := runtime.FuncForPC(pc).Name()
-
-		breakFlag = strings.Contains(funcName, callFuncName)
-		if breakFlag || !ok {
-			break
-		}
-		i++
-	}
-
-	return line, file
-}
-
-// 引数で指定したスタックトレースの階層の関数名を返す
-func callFuncName(depth int) string {
-	pc, _, _, _ := runtime.Caller(depth)
-	return runtime.FuncForPC(pc).Name()
 }
 
 const bufSize = 8 * 1024

@@ -21,7 +21,7 @@ func Rprintln(logLevel logLevel, output string) {
 	prevFileName, rotation, err := Logger.rotation()
 	handleError(err)
 
-	Logger.println(logLevel, output, Logger.depth)
+	Logger.logger.Printf("[%s] %s\n", logLevel, output)
 
 	Logger.FileClose()
 	Logger.Mutex.Unlock()
@@ -62,8 +62,4 @@ func SetPrefix(prefix string) {
 
 func SetFlags(flags int) {
 	Logger.logger.SetFlags(flags)
-}
-
-func SetDepth(depth int) {
-	Logger.depth = depth
 }
