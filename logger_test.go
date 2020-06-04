@@ -19,7 +19,7 @@ var (
 	msg         = "test err"
 	maxLine     = 100
 	maxRotation = 5
-	testCount   = 100000 // 回数が少ないとテスト失敗の可能性あり
+	testCount   = 10000 // 回数が少ないとテスト失敗の可能性あり
 )
 
 // テスト用ディレクトリを作成しテスト終了後に削除する。ローテーションの設定もここで行う
@@ -36,6 +36,17 @@ func TestMain(m *testing.M) {
 		msg := fmt.Sprintf("logger_test.go: testCountは%vより大きい数値にしてください", c)
 		panic(msg)
 	}
+
+	conf := &Config{
+		Rotate:      RotateConfig{MaxLine: maxLine, MaxRotation: maxRotation},
+		Mode:        ModeDebug,
+		LoggerFlags: LoggerFlags,
+		FilePath:    filePath,
+		FilePerm:    0666,
+		FileFlags:   FileFlags,
+		Compress:    true,
+	}
+	Initialize(conf)
 
 	os.Mkdir(dirPath, 0777)
 	SetFilePath(filePath)

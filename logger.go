@@ -13,15 +13,16 @@ const (
 
 	FileFlags = os.O_APPEND | os.O_CREATE | os.O_RDWR
 )
-var Logger *fileLogger
 
-func init() {
-	Logger = newfileLogger()
-}
+var Logger *fileLogger
 
 type fileLogger struct {
 	sync.Mutex
 	*LogFile
+	Logger *log.Logger
+	Conf   *Config
+}
+
 // Config loggerの設定を持つ構造体
 type Config struct {
 	Rotate      RotateConfig
@@ -40,51 +41,12 @@ type RotateConfig struct {
 	MaxRotation int // ファイル何枚ででローテーションするか
 }
 
-func newfileLogger() *fileLogger {
-	file := newLogFileDefault("")
-	args := newLoggerArgsDefault()
-
-	return &fileLogger{
-		LogFile:   file,
-		Logger:    log.New(os.Stdout, args.prefix, args.flags),
-		mode:      ModeDebug,
-		callPlace: true,
-		depth:     4,
-	}
-}
-
-// LoggerArgs log.Loggerの設定値を保持する
-type LoggerArgs struct {
-	prefix string
-	flags  int
-	custom bool
-}
-
-// newLoggerArgsDefault log.Loggerのデフォルトの設定値を持つ*LoggerArgs返す
-func newLoggerArgsDefault() *LoggerArgs {
-	return &LoggerArgs{
-		prefix: "",
-		flags:  log.Ldate | log.Ltime | log.LstdFlags,
-	}
-}
-
 // LogFile ログファイルの設定、pathファイル自体を保持する構造体
 type LogFile struct {
 	Perm   os.FileMode
 	flag   int
 	fm     *fileNameManager
 	file   *os.File
-	custom bool
-}
-
-// newLogFileDefault ログファイルのデフォルトの設定をセットして*LogFileを返す
-func newLogFileDefault(filePath string) *LogFile {
-	fm := newFileNameManager(filePath)
-	return &LogFile{
-		Perm: 0666,
-		flag: os.O_APPEND | os.O_CREATE | os.O_RDWR,
-		fm:   fm,
-	}
 }
 
 // FileClose ファイルをクローズする
@@ -137,20 +99,20 @@ func (l *fileLogger) rotation() (string, bool, error) {
 
 // isOverLine ローテーションが必要かチェックする。
 func (l *fileLogger) isOverLine() bool {
-	if l.rotateConf.MaxLine <= 1 {
+	if l.Conf.Rotate.MaxLine <= 1 {
 		return false
 	}
 	lineCount, _ := lineCounter(l.file)
-	return lineCount > l.rotateConf.MaxLine
+	return lineCount > l.Conf.Rotate.MaxLine
 }
 
 // isOverFile セットされているローテーションするファイル数に達しているかチェックする。
 func (l *fileLogger) isOverFile(fileList []os.FileInfo) bool {
-	if l.rotateConf.MaxRotation <= 1 {
+	if l.Conf.Rotate.MaxRotation <= 1 {
 		return false
 	}
 
-	return len(fileList) > l.rotateConf.MaxRotation
+	return len(fileList) > l.Conf.Rotate.MaxRotation
 }
 
 // deleteOldFile 一番古いログファイルを削除する必要があるかチェックし、必要なら削除する

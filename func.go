@@ -2,14 +2,29 @@ package filelogger
 
 import (
 	"log"
+	"os"
 )
+
+// Initialize Loggerを初期化する。
+func Initialize(conf *Config) {
+	file := LogFile{
+		Perm: conf.FilePerm,
+		flag: conf.FileFlags,
+		fm:   newFileNameManager(conf.FilePath),
+	}
+	Logger = &fileLogger{
+		LogFile: &file,
+		Logger:  log.New(os.Stdout, conf.Prefix, conf.LoggerFlags),
+		Conf:    conf,
+	}
+}
 
 // Rprintln ログを出力する
 // 最初にロックをかけ、ローテーションが必要なら現在のファイルの名前にローテーション時の日時を付与し、次のファイルに移る。
 // この関数が呼び出されたファイル名と行数を取得し、ログのタイプ、ログと一緒に出力する。
 // ローテーションした場合はロック解除後にファイルの圧縮を行う
 func Rprintln(logLevel logLevel, output string) {
-	if Logger.mode.isNoOutput(logLevel) {
+	if Logger.Conf.Mode.isNoOutput(logLevel) {
 		return
 	}
 
@@ -38,12 +53,13 @@ func LogPrintln(msg string) {
 	log.Println(msg)
 }
 
+// SetConfig
 func SetRotate(conf RotateConfig) {
-	Logger.rotateConf = conf
+	Logger.Conf.Rotate = conf
 }
 
 func SetMode(mode logMode) {
-	Logger.mode = mode
+	Logger.Conf.Mode = mode
 }
 
 // SetFilePath 受け取ったログファイルのpathをnewFileNameManagerに渡し、それをfmフィールドにセットする
