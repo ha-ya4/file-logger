@@ -8,6 +8,11 @@ import (
 )
 
 // Logger ファイルへログ出力、ログローテーションなどをする
+const (
+	LoggerFlags = log.Ldate | log.Ltime | log.LstdFlags
+
+	FileFlags = os.O_APPEND | os.O_CREATE | os.O_RDWR
+)
 var Logger *fileLogger
 
 func init() {
@@ -17,9 +22,16 @@ func init() {
 type fileLogger struct {
 	sync.Mutex
 	*LogFile
-	Logger     *log.Logger
-	mode       logMode // ログレベルによる出力の有無を切り替えるためのモード
-	rotateConf RotateConfig
+// Config loggerの設定を持つ構造体
+type Config struct {
+	Rotate      RotateConfig
+	Mode        logMode // ログレベルによる出力の有無を切り替えるためのモード
+	LoggerFlags int
+	FilePath    string
+	FilePerm    os.FileMode
+	FileFlags   int
+	Compress    bool
+	Prefix      string
 }
 
 // RotateConfig ローテーションの設定をする構造体

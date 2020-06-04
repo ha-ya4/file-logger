@@ -1,0 +1,18 @@
+package filelogger
+
+import (
+    "fmt"
+)
+
+type Number struct {
+    num int
+}
+
+func (n Number) GetNumber() int {
+    return n.num
+}
+
+func main() {
+    n := Number{num:100}
+    fmt.Println(n.GetNumber())
+}

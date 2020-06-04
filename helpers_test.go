@@ -7,10 +7,11 @@ import (
 )
 
 func TestLineCounter(t *testing.T) {
-	file, _ := os.Open("./helpers_test.txt")
+	file, _ := os.Open("./linecounter_test.txt")
 	defer file.Close()
+
 	count, _ := lineCounter(file)
-	expectedCount := 13
+	expectedCount := 18
 
 	if count != expectedCount {
 		t.Errorf("\nファイル行数が一致していません\ncount=%d\nexpected=%d", count, expectedCount)
