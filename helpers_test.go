@@ -3,7 +3,10 @@ package filelogger
 import (
 	"bytes"
 	"os"
+	"path/filepath"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestLineCounter(t *testing.T) {
@@ -12,42 +15,44 @@ func TestLineCounter(t *testing.T) {
 
 	count, _ := lineCounter(file)
 	expectedCount := 18
-
-	if count != expectedCount {
-		t.Errorf("\nファイル行数が一致していません\ncount=%d\nexpected=%d", count, expectedCount)
-	}
+	assert.True(t, expectedCount == count)
 }
 
 func TestContainsSTRFileList(t *testing.T) {
-	path := "./"
-	fileName := ".go"
-	fileList := containsSTRFileList(path, fileName)
-	len := len(fileList)
-	expectedLen := 7
-
-	if len != expectedLen {
-		t.Errorf("\n期待されるファイル数ではありません\ncount=%d\nexpected=%d", len, expectedLen)
+	//test用ディレクトリとファイル作成
+	dirName := "ttttest"
+	err := os.Mkdir(dirName, 0777)
+	assert.NoError(t, err)
+	fName := []string{"a", "b", "c", "d", "e", "f"}
+	for _, n := range fName {
+		fn := filepath.Join(dirName, n+".txt")
+		_, err = os.Create(fn)
+		assert.NoError(t, err)
 	}
+	// 一つだけ拡張子が違うファイルを作り、containsSTRFileListで取得できる配列にふくまれていないかをチェックする
+	fn := filepath.Join(dirName, "hello.js")
+	_, err = os.Create(fn)
+	assert.NoError(t, err)
+
+	fileList := containsSTRFileList(dirName, ".txt")
+	for i := 0; i < len(fileList); i++ {
+		equal := fName[i]+".txt" == fileList[i].Name()
+		assert.True(t, equal)
+	}
+
+	assert.NoError(t, os.RemoveAll(dirName))
 }
 
 func TestCompressAndUnfreeze(t *testing.T) {
 	var err error
-	c := []byte("Hello World!")
+	target := []byte("Hello World!")
 
-	b := &bytes.Buffer{}
-	err = compress(b, c)
-	if err != nil {
-		t.Errorf("TestCompressAndUnfreeze: 圧縮に失敗しました")
-	}
-	if b.String() == string(c) {
-		t.Errorf("TestCompressAndUnfreeze: 圧縮に失敗しました\nunfreezw=%s\nexpected=%s", b.String(), string(c))
-	}
+	byt := &bytes.Buffer{}
+	err = compress(byt, target)
+	assert.NoError(t, err)
+	assert.False(t, byt.String() == string(target))
 
-	bb, err := Unfreeze(b)
-	if err != nil {
-		t.Errorf("TestCompressAndUnfreeze: 解凍に失敗しました")
-	}
-	if bb.String() != string(c) {
-		t.Errorf("TestCompressAndUnfreeze: 期待される結果が得られませんでした\nunfreezw=%s\nexpected=%s", bb.String(), string(c))
-	}
+	byt, err = Unfreeze(byt)
+	assert.NoError(t, err)
+	assert.True(t, byt.String() == string(target))
 }

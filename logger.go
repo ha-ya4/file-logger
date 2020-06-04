@@ -43,10 +43,10 @@ type RotateConfig struct {
 
 // LogFile ログファイルの設定、pathファイル自体を保持する構造体
 type LogFile struct {
-	Perm   os.FileMode
-	flag   int
-	fm     *fileNameManager
-	file   *os.File
+	Perm os.FileMode
+	flag int
+	fm   *fileNameManager
+	file *os.File
 }
 
 // FileClose ファイルをクローズする
