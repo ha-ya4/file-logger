@@ -7,13 +7,27 @@ import (
 	"sync"
 )
 
-// Logger ファイルへログ出力、ログローテーションなどをする
+// loggerとファイルのフラグ
 const (
 	LoggerFlags = log.Ldate | log.Ltime | log.LstdFlags
-
-	FileFlags = os.O_APPEND | os.O_CREATE | os.O_RDWR
+	FileFlags   = os.O_APPEND | os.O_CREATE | os.O_RDWR
 )
 
+// 基本的なログレベルをpackage側で定義
+const (
+	DEBUG = "DEBUG"
+	INFO  = "INFO"
+	WARN  = "WARN"
+	ERROR = "ERROR"
+)
+
+// 基本的なログモードをpackage側で定義
+const (
+	ModeDebug      = "DebugMode"
+	ModeProduction = "ProductionMode"
+)
+
+// Logger ファイルへログ出力、ログローテーションなどをする
 var Logger *fileLogger
 
 type fileLogger struct {
@@ -25,20 +39,48 @@ type fileLogger struct {
 
 // Config loggerの設定を持つ構造体
 type Config struct {
-	Rotate      RotateConfig
-	Mode        logMode // ログレベルによる出力の有無を切り替えるためのモード
-	LoggerFlags int
-	FilePath    string
-	FilePerm    os.FileMode
-	FileFlags   int
-	Compress    bool
-	Prefix      string
+	Rotate       RotateConfig
+	Mode         string // ログレベルによる出力の有無を切り替えるためのモード
+	LoggerFlags  int
+	FilePath     string
+	FilePerm     os.FileMode
+	FileFlags    int
+	Compress     bool
+	Prefix       string
+	LogLevelConf LogLevelConfig
 }
 
 // RotateConfig ローテーションの設定をする構造体
 type RotateConfig struct {
 	MaxLine     int // 何行で次のファイルに移るか
 	MaxRotation int // ファイル何枚ででローテーションするか
+}
+
+// LogLevelConfig LogLevelConfのスライス
+type LogLevelConfig []LevelConfig
+
+// LevelConfig 指定したモードのときに指定したレベルのログを出力しないための設定
+type LevelConfig struct {
+	Mode          string
+	ExcludedLevel []string
+}
+
+func (llc LogLevelConfig) findMode(mode string) (int, bool) {
+	for idx, l := range llc {
+		if l.Mode == mode {
+			return idx, true
+		}
+	}
+	return 0, false
+}
+
+func (lc LevelConfig) isExcluded(level string) bool {
+	for _, el := range lc.ExcludedLevel {
+		if el == level {
+			return true
+		}
+	}
+	return false
 }
 
 // LogFile ログファイルの設定、pathファイル自体を保持する構造体
@@ -124,6 +166,17 @@ func (l *fileLogger) deleteOldFile(fileList []os.FileInfo) error {
 	}
 
 	return err
+}
+
+func (l *fileLogger) shouldNotOutput(level string) bool {
+	idx, exist := l.Conf.LogLevelConf.findMode(l.Conf.Mode)
+	if !exist {
+		return false
+	}
+	if l.Conf.LogLevelConf[idx].isExcluded(level) {
+		return true
+	}
+	return false
 }
 
 func handleError(err error) {

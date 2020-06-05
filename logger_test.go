@@ -24,6 +24,31 @@ var (
 	testCount   = 10000 // 回数が少ないとテスト失敗の可能性あり
 )
 
+// 指定した回数並行処理でログを出力する
+func forPrintln(c int) {
+	wg := &sync.WaitGroup{}
+	for i := 0; i < c; i++ {
+		wg.Add(1)
+		go func() {
+			Rprintln(ERROR, msg)
+			wg.Done()
+		}()
+	}
+	wg.Wait()
+}
+
+// gzipを解凍する。調査用。
+func u(n string) (*bytes.Buffer, error) {
+	fn := filepath.Join(dirPath, n)
+	f, _ := os.Open(fn)
+	b, err := Unfreeze(f)
+	return b, err
+}
+
+//******************************************************
+// ここからテスト
+//******************************************************
+
 // テスト用ディレクトリを作成しテスト終了後に削除する。ローテーションの設定もここで行う
 // testCountが大きすぎるとgoroutineがおかしく？なってpanicしてしまうのでifでチェックして必要ならpanicする
 // (おそらくgoroutineの立ち上げすぎが原因だと思う)
@@ -41,12 +66,18 @@ func TestMain(m *testing.M) {
 
 	conf := &Config{
 		Rotate:      RotateConfig{MaxLine: maxLine, MaxRotation: maxRotation},
-		Mode:        ModeDebug,
+		Mode:        ModeProduction,
 		LoggerFlags: LoggerFlags,
 		FilePath:    filePath,
 		FilePerm:    0666,
 		FileFlags:   FileFlags,
 		Compress:    true,
+		LogLevelConf: LogLevelConfig{
+			LevelConfig{
+				Mode: ModeProduction,
+				ExcludedLevel: []string{DEBUG},
+			},
+		},
 	}
 	Initialize(conf)
 
@@ -58,6 +89,7 @@ func TestMain(m *testing.M) {
 	code := m.Run()
 
 	os.RemoveAll(dirPath)
+
 	os.Exit(code)
 }
 
@@ -138,23 +170,75 @@ func TestRotation(t *testing.T) {
 	assert.True(t, expected == result)
 }
 
-// 指定した回数並行処理でログを出力する
-func forPrintln(c int) {
-	wg := &sync.WaitGroup{}
-	for i := 0; i < c; i++ {
-		wg.Add(1)
-		go func() {
-			Rprintln(ERROR, msg)
-			wg.Done()
-		}()
+func TestLogLevelConfigFindMode(t *testing.T) {
+	lc := LogLevelConfig{
+		LevelConfig{
+			Mode: "go",
+		},
+		LevelConfig{
+			Mode: "js",
+		},
+		LevelConfig{
+			Mode: "ts",
+		},
+		LevelConfig{
+			Mode: "py",
+		},
+		LevelConfig{
+			Mode: "rust",
+		},
 	}
-	wg.Wait()
+	i, exist := lc.findMode("py")
+	assert.True(t, exist)
+	assert.True(t, i == 3)
+
+	i, exist = lc.findMode("php")
+	assert.False(t, exist)
 }
 
-// gzipを解凍する。調査用。
-func u(n string) (*bytes.Buffer, error) {
-	fn := filepath.Join(dirPath, n)
-	f, _ := os.Open(fn)
-	b, err := Unfreeze(f)
-	return b, err
+func TestLevelConfigIsExcluded(t *testing.T) {
+	lc := LevelConfig{
+		Mode: "go",
+		ExcludedLevel: []string{
+			"INFO", "DEBUG",
+		},
+	}
+	assert.True(t, lc.isExcluded("INFO"))
+	assert.False(t, lc.isExcluded("ERROR"))
+}
+
+func TestShouldNotOutput(t *testing.T) {
+	lc := LogLevelConfig{
+		LevelConfig{
+			Mode: "go",
+			ExcludedLevel: []string{
+				"INFO", "DEBUG",
+			},
+		},
+		LevelConfig{
+			Mode: "js",
+			ExcludedLevel: []string{
+				"INFO",
+			},
+		},
+		LevelConfig{
+			Mode: "ts",
+			ExcludedLevel: []string{
+				"DEBUG",
+			},
+		},
+	}
+	logger := fileLogger{
+		Conf: &Config{
+			Mode:         "go",
+			LogLevelConf: lc,
+		},
+	}
+
+	assert.True(t, logger.shouldNotOutput("INFO"))
+	assert.False(t, logger.shouldNotOutput("ERROR"))
+
+	logger.Conf.Mode = "ts"
+	assert.True(t, logger.shouldNotOutput("DEBUG"))
+	assert.False(t, logger.shouldNotOutput("INFO"))
 }
