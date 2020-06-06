@@ -1,50 +1,51 @@
 package filelogger
 
 import (
+	"fmt"
 	"log"
 	"os"
 )
 
 // Initialize Loggerを初期化する。
 func Initialize(conf *Config) {
+	Logger = newFileLogger(conf)
+}
+
+func newFileLogger(conf *Config) *fileLogger {
 	file := LogFile{
 		Perm: conf.FilePerm,
 		flag: conf.FileFlags,
 		fm:   newFileNameManager(conf.FilePath),
 	}
-	Logger = &fileLogger{
+	return &fileLogger{
 		LogFile: &file,
 		Logger:  log.New(os.Stdout, conf.Prefix, conf.LoggerFlags),
 		Conf:    conf,
 	}
 }
 
-// Rprintln ログを出力する
-// 最初にロックをかけ、ローテーションが必要なら現在のファイルの名前にローテーション時の日時を付与し、次のファイルに移る。
-// この関数が呼び出されたファイル名と行数を取得し、ログのタイプ、ログと一緒に出力する。
-// ローテーションした場合はロック解除後にファイルの圧縮を行う
-func Rprintln(logLevel logLevel, output string) {
-	if Logger.Conf.Mode.isNoOutput(logLevel) {
-		return
-	}
+// Rprintlf ローテーションとログレベルによる出力の有無を加えたlog.LoggerのPrintf
+func Rprintf(logLevel string, format string, v ...interface{}) {
+	Logger.logOutput(logLevel, func() {
+		s := fmt.Sprintf("[%s] %v", logLevel, format)
+		Logger.Logger.Printf(s, v...)
+	})
+}
 
-	var err error
-	Logger.Mutex.Lock()
-	err = Logger.setOutput()
-	handleError(err)
+// Rprintln ローテーションとログレベルによる出力の有無を加えたlog.LoggerのPrintln
+func Rprintln(logLevel string, v ...interface{}) {
+	Logger.logOutput(logLevel, func() {
+		v[0] = fmt.Sprintf("[%s] %v", logLevel, v[0])
+		Logger.Logger.Println(v...)
+	})
+}
 
-	prevFileName, rotation, err := Logger.rotation()
-	handleError(err)
-
-	Logger.Logger.Printf("[%s] %s\n", logLevel, output)
-
-	Logger.FileClose()
-	Logger.Mutex.Unlock()
-
-	if rotation {
-		err = CompressFile(prevFileName)
-		handleError(err)
-	}
+// Rprint ローテーションとログレベルによる出力の有無を加えたlog.LoggerのPrint
+func Rprint(logLevel string, v ...interface{}) {
+	Logger.logOutput(logLevel, func() {
+		v[0] = fmt.Sprintf("[%s] %v", logLevel, v[0])
+		Logger.Logger.Print(v...)
+	})
 }
 
 // LogPrintln パッケージlogのPrintln関数に引数のmsgを渡すだけの関数

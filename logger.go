@@ -111,6 +111,34 @@ func (l *fileLogger) setOutput() error {
 	return err
 }
 
+// 最初にロックをかけ、ローテーションが必要なら現在のファイルの名前にローテーション時の日時を付与し、次のファイルに移る。
+// この関数が呼び出されたファイル名と行数を取得し、ログのタイプ、ログと一緒に出力する。
+// ローテーションした場合はロック解除後にファイルの圧縮を行う
+func (l *fileLogger) logOutput(logLevel string, printFunc func()) {
+	// loglevelの設定を見て出力の必要がなければリターン
+	if l.shouldNotOutput(logLevel) {
+		return
+	}
+
+	var err error
+	l.Mutex.Lock()
+	err = l.setOutput()
+	handleError(err)
+
+	prevFileName, rotation, err := l.rotation()
+	handleError(err)
+
+	printFunc()
+
+	l.FileClose()
+	l.Mutex.Unlock()
+
+	if rotation {
+		err = CompressFile(prevFileName)
+		handleError(err)
+	}
+}
+
 // rotation セットされているファイルに書き込む最大行数に達しているかチェックし、必要なら次のファイルを作成しアウトプット先としてセットする。
 // 前のファイルにはローテーション時の日時を付与した名前に変更する。
 // 名前の変更に成功してから前のファイルのクローズをしている。
@@ -131,8 +159,13 @@ func (l *fileLogger) rotation() (string, bool, error) {
 		return fileName, rotation, err
 	}
 
-	l.FileClose()
-	l.setOutput()
+	if err = l.FileClose(); err != nil {
+		return fileName, rotation, err
+	}
+	if l.setOutput(); err != nil {
+		return fileName, rotation, err
+	}
+
 	fileList := containsSTRFileList(l.fm.dir, l.fm.name)
 	err = l.deleteOldFile(fileList)
 

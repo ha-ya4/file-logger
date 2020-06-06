@@ -74,7 +74,7 @@ func TestMain(m *testing.M) {
 		Compress:    true,
 		LogLevelConf: LogLevelConfig{
 			LevelConfig{
-				Mode: ModeProduction,
+				Mode:          ModeProduction,
 				ExcludedLevel: []string{DEBUG},
 			},
 		},
