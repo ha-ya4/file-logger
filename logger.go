@@ -32,7 +32,7 @@ var Logger *fileLogger
 
 type fileLogger struct {
 	sync.Mutex
-	*LogFile
+	file   *LogFile
 	Logger *log.Logger
 	Conf   *Config
 }
@@ -48,6 +48,14 @@ type Config struct {
 	Compress     bool
 	Prefix       string
 	LogLevelConf LogLevelConfig
+}
+
+// LogFile ログファイルの設定、pathファイル自体を保持する構造体
+type LogFile struct {
+	perm os.FileMode
+	flag int
+	fm   *fileNameManager
+	file *os.File
 }
 
 // RotateConfig ローテーションの設定をする構造体
@@ -83,30 +91,11 @@ func (lc LevelConfig) isExcluded(level string) bool {
 	return false
 }
 
-// LogFile ログファイルの設定、pathファイル自体を保持する構造体
-type LogFile struct {
-	Perm os.FileMode
-	flag int
-	fm   *fileNameManager
-	file *os.File
-}
-
-// FileClose ファイルをクローズする
-func (l *LogFile) FileClose() error {
-	return l.file.Close()
-}
-
-func (l *LogFile) openFile() error {
-	var err error
-	l.file, err = os.OpenFile(l.fm.path, l.flag, l.Perm)
-	return err
-}
-
 func (l *fileLogger) setOutput() error {
 	var err error
-	err = l.openFile()
+	l.file.file, err = os.OpenFile(l.file.fm.path, l.file.flag, l.file.perm)
 	if err == nil {
-		l.Logger.SetOutput(l.file)
+		l.Logger.SetOutput(l.file.file)
 	}
 	return err
 }
@@ -122,20 +111,26 @@ func (l *fileLogger) logOutput(logLevel string, printFunc func()) {
 
 	var err error
 	l.Mutex.Lock()
-	err = l.setOutput()
-	handleError(err)
+	if err = l.setOutput(); err != nil {
+		logPrintln(err.Error())
+	}
 
 	prevFileName, rotation, err := l.rotation()
-	handleError(err)
+	if err != nil {
+		logPrintln(err.Error())
+	}
 
 	printFunc()
 
-	l.FileClose()
+	if err = l.file.file.Close(); err != nil {
+		logPrintln(err.Error())
+	}
 	l.Mutex.Unlock()
 
 	if rotation {
-		err = CompressFile(prevFileName)
-		handleError(err)
+		if err = CompressFile(prevFileName); err != nil {
+			logPrintln(err.Error())
+		}
 	}
 }
 
@@ -152,21 +147,21 @@ func (l *fileLogger) rotation() (string, bool, error) {
 	}
 
 	rotation = true
-	fileName = filepath.Join(l.fm.dir, l.fm.getNameAddTimeNow())
-	err = os.Rename(l.fm.path, fileName)
+	fileName = filepath.Join(l.file.fm.dir, l.file.fm.getNameAddTimeNow())
+	err = os.Rename(l.file.fm.path, fileName)
 	if err != nil {
 		rotation = false
 		return fileName, rotation, err
 	}
 
-	if err = l.FileClose(); err != nil {
+	if err = l.file.file.Close(); err != nil {
 		return fileName, rotation, err
 	}
 	if l.setOutput(); err != nil {
 		return fileName, rotation, err
 	}
 
-	fileList := containsSTRFileList(l.fm.dir, l.fm.name)
+	fileList := containsSTRFileList(l.file.fm.dir, l.file.fm.name)
 	err = l.deleteOldFile(fileList)
 
 	return fileName, rotation, err
@@ -177,7 +172,7 @@ func (l *fileLogger) isOverLine() bool {
 	if l.Conf.Rotate.MaxLine <= 1 {
 		return false
 	}
-	lineCount, _ := lineCounter(l.file)
+	lineCount, _ := lineCounter(l.file.file)
 	return lineCount > l.Conf.Rotate.MaxLine
 }
 
@@ -195,7 +190,7 @@ func (l *fileLogger) deleteOldFile(fileList []os.FileInfo) error {
 	var err error
 	if l.isOverFile(fileList) {
 		oldFileName := oldFileName(fileList)
-		err = os.Remove(filepath.Join(l.fm.dir, oldFileName))
+		err = os.Remove(filepath.Join(l.file.fm.dir, oldFileName))
 	}
 
 	return err
@@ -210,10 +205,4 @@ func (l *fileLogger) shouldNotOutput(level string) bool {
 		return true
 	}
 	return false
-}
-
-func handleError(err error) {
-	if err != nil {
-		logPrintln(err.Error())
-	}
 }

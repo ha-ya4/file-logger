@@ -82,8 +82,6 @@ func TestMain(m *testing.M) {
 	Initialize(conf)
 
 	os.Mkdir(dirPath, 0777)
-	SetFilePath(filePath)
-	SetRotate(RotateConfig{MaxLine: maxLine, MaxRotation: maxRotation})
 	forPrintln(testCount)
 
 	code := m.Run()

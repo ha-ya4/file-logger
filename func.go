@@ -13,18 +13,24 @@ func Initialize(conf *Config) {
 
 func newFileLogger(conf *Config) *fileLogger {
 	file := LogFile{
-		Perm: conf.FilePerm,
+		perm: conf.FilePerm,
 		flag: conf.FileFlags,
 		fm:   newFileNameManager(conf.FilePath),
 	}
 	return &fileLogger{
-		LogFile: &file,
-		Logger:  log.New(os.Stdout, conf.Prefix, conf.LoggerFlags),
-		Conf:    conf,
+		file:   &file,
+		Logger: log.New(os.Stdout, conf.Prefix, conf.LoggerFlags),
+		Conf:   conf,
 	}
 }
 
-// Rprintlf ローテーションとログレベルによる出力の有無を加えたlog.LoggerのPrintf
+// LogPrintln パッケージlogのPrintln関数に引数のmsgを渡すだけの関数
+// パッケージ使用側でパッケージlogをインポートしなくて済むように
+func LogPrintln(v ...interface{}) {
+	log.Println(v...)
+}
+
+// Rprintf ローテーションとログレベルによる出力の有無を加えたlog.LoggerのPrintf
 func Rprintf(logLevel string, format string, v ...interface{}) {
 	Logger.logOutput(logLevel, func() {
 		s := fmt.Sprintf("[%s] %v", logLevel, format)
@@ -48,30 +54,33 @@ func Rprint(logLevel string, v ...interface{}) {
 	})
 }
 
-// LogPrintln パッケージlogのPrintln関数に引数のmsgを渡すだけの関数
-// パッケージ使用側でパッケージlogをインポートしなくて済むように
-func LogPrintln(msg string) {
-	log.Println(msg)
-}
+//******************************************************
+// ショートカット系関数
+//******************************************************
 
-// SetConfig
-func SetRotate(conf RotateConfig) {
-	Logger.Conf.Rotate = conf
-}
-
-func SetMode(mode logMode) {
-	Logger.Conf.Mode = mode
-}
-
-// SetFilePath 受け取ったログファイルのpathをnewFileNameManagerに渡し、それをfmフィールドにセットする
-func SetFilePath(path string) {
-	Logger.fm = newFileNameManager(path)
-}
-
+// SetPrefix prefixをセットする
 func SetPrefix(prefix string) {
 	Logger.Logger.SetPrefix(prefix)
 }
 
+// SetFlags loggerのフラグをセットする
 func SetFlags(flags int) {
 	Logger.Logger.SetFlags(flags)
 }
+
+/* 現時点で必要ないと思うのけど今後の変更でまた追加したくなる可能性があるのでコメントアウトしておく
+// SetFilePath 受け取ったログファイルのpathをnewFileNameManagerに渡し、それをfmフィールドにセットする
+func SetFilePath(path string) {
+	Logger.file.fm = newFileNameManager(path)
+}
+
+// SetFileFlags
+func SetFileFlags(flag int) {
+	Logger.file.flag = flag
+}
+
+// SetFilePerm
+func SetFilePerm(perm os.FileMode) {
+	Logger.file.perm = perm
+}
+*/
