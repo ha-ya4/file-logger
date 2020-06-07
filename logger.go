@@ -11,6 +11,7 @@ import (
 const (
 	LoggerFlags = log.Ldate | log.Ltime | log.LstdFlags
 	FileFlags   = os.O_APPEND | os.O_CREATE | os.O_RDWR
+	FilePerm    = 0777
 )
 
 // 基本的なログレベルをpackage側で定義

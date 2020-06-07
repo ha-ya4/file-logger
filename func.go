@@ -12,6 +12,7 @@ func Initialize(conf *Config) {
 }
 
 func newFileLogger(conf *Config) *fileLogger {
+	conf = addMissingConfParts(conf)
 	file := LogFile{
 		perm: conf.FilePerm,
 		flag: conf.FileFlags,
@@ -22,6 +23,18 @@ func newFileLogger(conf *Config) *fileLogger {
 		Logger: log.New(os.Stdout, conf.Prefix, conf.LoggerFlags),
 		Conf:   conf,
 	}
+}
+
+// addMissingConfParts 初期値のままだとnil pointer derefarenceになってしまう設定をこのパッケージで定義された値に置き換える関数
+func addMissingConfParts(conf *Config) *Config {
+	if conf.FileFlags == 0 {
+		conf.FileFlags = FileFlags
+	}
+	if conf.FilePerm == 0 {
+		conf.FilePerm = FilePerm
+	}
+
+	return conf
 }
 
 // LogPrintf ログレベルによる出力の有無を加えたlogパッケージのPrintf
