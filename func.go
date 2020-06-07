@@ -24,10 +24,28 @@ func newFileLogger(conf *Config) *fileLogger {
 	}
 }
 
-// LogPrintln パッケージlogのPrintln関数に引数のmsgを渡すだけの関数
-// パッケージ使用側でパッケージlogをインポートしなくて済むように
-func LogPrintln(v ...interface{}) {
+// LogPrintf ログレベルによる出力の有無を加えたlogパッケージのPrintf
+func LogPrintf(logLevel string, format string, v ...interface{}) {
+	if Logger.shouldNotOutput(logLevel) {
+		return
+	}
+	log.Printf(format, v...)
+}
+
+// LogPrintln ログレベルによる出力の有無を加えたlogパッケージのPrintln
+func LogPrintln(logLevel string, v ...interface{}) {
+	if Logger.shouldNotOutput(logLevel) {
+		return
+	}
 	log.Println(v...)
+}
+
+// LogPrint ログレベルによる出力の有無を加えたlogパッケージのPrint
+func LogPrint(logLevel string, v ...interface{}) {
+	if Logger.shouldNotOutput(logLevel) {
+		return
+	}
+	log.Print(v...)
 }
 
 // Rprintf ローテーションとログレベルによる出力の有無を加えたlog.LoggerのPrintf

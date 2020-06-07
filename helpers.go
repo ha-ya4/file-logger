@@ -15,8 +15,7 @@ import (
 
 func logPrintln(msg string) {
 	prefix := "[filelogger error] "
-	l := log.New(os.Stdout, prefix, log.Ldate|log.Ltime|log.LstdFlags)
-	l.Println(msg)
+	log.New(os.Stdout, prefix, LoggerFlags).Println(msg)
 }
 
 type fileNameManager struct {
