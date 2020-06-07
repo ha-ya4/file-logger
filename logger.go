@@ -127,7 +127,7 @@ func (l *fileLogger) logOutput(logLevel string, printFunc func()) {
 	}
 	l.Mutex.Unlock()
 
-	if rotation {
+	if rotation && l.Conf.Compress {
 		if err = CompressFile(prevFileName); err != nil {
 			logPrintln(err.Error())
 		}
@@ -162,7 +162,9 @@ func (l *fileLogger) rotation() (string, bool, error) {
 	}
 
 	fileList := containsSTRFileList(l.file.fm.dir, l.file.fm.name)
-	err = l.deleteOldFile(fileList)
+	if l.isOverFile(fileList) {
+		err = l.deleteOldFile(fileList)
+	}
 
 	return fileName, rotation, err
 }
@@ -187,13 +189,8 @@ func (l *fileLogger) isOverFile(fileList []os.FileInfo) bool {
 
 // deleteOldFile 一番古いログファイルを削除する必要があるかチェックし、必要なら削除する
 func (l *fileLogger) deleteOldFile(fileList []os.FileInfo) error {
-	var err error
-	if l.isOverFile(fileList) {
-		oldFileName := oldFileName(fileList)
-		err = os.Remove(filepath.Join(l.file.fm.dir, oldFileName))
-	}
-
-	return err
+	oldFileName := oldFileName(fileList)
+	return os.Remove(filepath.Join(l.file.fm.dir, oldFileName))
 }
 
 func (l *fileLogger) shouldNotOutput(level string) bool {

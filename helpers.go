@@ -141,8 +141,7 @@ func CompressFile(path string) error {
 		return err
 	}
 
-	err = compress(newFile, b)
-	return err
+	return compress(newFile, b)
 }
 
 // Unfreeze gzipで圧縮されたものを解凍する。このパッケージには直接かかわらないが、補助用の関数として書いておく
